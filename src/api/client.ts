@@ -1,46 +1,9 @@
 import type { ApiError } from './types'
+import { clearSession, getSession } from '../auth/session'
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
+export { clearSession, getSession, saveSession, type StoredSession } from '../auth/session'
 
-const SESSION_KEY = 'ic.session.v1'
-
-export interface StoredSession {
-  token: string
-  user_id: number
-  user_name: string
-  is_admin: boolean
-  expires_at: number
-}
-
-export function getSession(): StoredSession | null {
-  try {
-    const raw = localStorage.getItem(SESSION_KEY)
-    if (!raw) return null
-    const session: StoredSession = JSON.parse(raw)
-    if (Date.now() > session.expires_at) {
-      localStorage.removeItem(SESSION_KEY)
-      return null
-    }
-    return session
-  } catch {
-    return null
-  }
-}
-
-export function saveSession(data: { access_token: string; user_id: number; user_name: string; is_admin: boolean }) {
-  const session: StoredSession = {
-    token: data.access_token,
-    user_id: data.user_id,
-    user_name: data.user_name,
-    is_admin: data.is_admin,
-    expires_at: Date.now() + 30 * 24 * 60 * 60 * 1000,
-  }
-  localStorage.setItem(SESSION_KEY, JSON.stringify(session))
-}
-
-export function clearSession() {
-  localStorage.removeItem(SESSION_KEY)
-}
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')
 
 export class HttpError extends Error {
   constructor(
@@ -56,63 +19,55 @@ export class HttpError extends Error {
 function getErrorMessage(status: number, detail: unknown): string {
   switch (status) {
     case 401:
-      return 'Your session has expired. Please log in again.'
+      return 'Your session has expired. Please sign in again.'
     case 403:
-      return 'You do not have permission to perform this action.'
+      return 'You do not have permission to do this.'
     case 404:
-      return 'The requested resource was not found.'
+      return 'We could not find that item.'
     case 409:
-      return 'This slot is already claimed by another commander!'
+      return 'That time has just been booked. Please choose another slot.'
     case 422:
-      return typeof detail === 'object' && detail !== null && 'detail' in detail
-        ? `Validation error: ${JSON.stringify((detail as ApiError).detail)}`
-        : 'Invalid request data.'
+      return typeof detail === 'object' && detail !== null && 'detail' in detail &&
+        typeof (detail as ApiError).detail === 'string'
+        ? String((detail as ApiError).detail)
+        : 'Please check the details and try again.'
     default:
-      return `Server error (${status}). Try again later.`
+      return 'We could not connect to the club. Please try again shortly.'
   }
 }
 
 let onUnauthorized: (() => void) | null = null
 export function setOnUnauthorized(cb: () => void) {
   onUnauthorized = cb
+  return () => {
+    if (onUnauthorized === cb) onUnauthorized = null
+  }
 }
 
-async function request<T>(
-  path: string,
-  options: RequestInit = {},
-  authenticated = true,
-): Promise<T> {
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    ...(options.headers as Record<string, string>),
+async function request<T>(path: string, options: RequestInit = {}, authenticated = true): Promise<T> {
+  const headers = new Headers(options.headers)
+  if (options.body) headers.set('Content-Type', 'application/json')
+  const session = authenticated ? getSession() : null
+  if (session) headers.set('Authorization', `Bearer ${session.token}`)
+
+  let res: Response
+  try {
+    res = await fetch(`${API_BASE}${path}`, { ...options, headers, signal: options.signal ?? AbortSignal.timeout(20000) })
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') throw error
+    throw new Error('We could not connect to the club. Please check your connection and try again.')
   }
-
-  if (authenticated) {
-    const session = getSession()
-    if (session) {
-      headers['Authorization'] = `Bearer ${session.token}`
-    }
-  }
-
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers,
-  })
-
-  if (res.status === 204) {
-    return undefined as T
-  }
-
-  const data = res.ok ? await res.json().catch(() => null) : await res.json().catch(() => null)
+  if (res.status === 204) return undefined as T
+  const data: unknown = await res.json().catch(() => null)
 
   if (!res.ok) {
-    if (res.status === 401) {
+    // An old request must not sign out a newer session.
+    if (res.status === 401 && authenticated && session?.token === getSession()?.token) {
       clearSession()
       onUnauthorized?.()
     }
     throw new HttpError(res.status, data, getErrorMessage(res.status, data))
   }
-
   return data as T
 }
 

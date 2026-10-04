@@ -11,10 +11,10 @@ const ToastContext = createContext<ToastContextValue | null>(null)
 let _id = 0
 
 const config: Record<ToastType, { icon: React.ReactNode; color: string; bg: string; border: string }> = {
-  success: { icon: <CheckCircle className="w-4 h-4" />, color: '#4caf72', bg: '#111',       border: 'rgba(76,175,114,0.25)' },
-  error:   { icon: <AlertCircle  className="w-4 h-4" />, color: '#f04040', bg: '#111',       border: 'rgba(240,64,64,0.3)'  },
-  warning: { icon: <AlertTriangle className="w-4 h-4" />, color: '#e8a020', bg: '#111',      border: 'rgba(232,160,32,0.3)' },
-  info:    { icon: <Info          className="w-4 h-4" />, color: '#999',    bg: '#111',       border: '#2a2a2a'              },
+  success: { icon: <CheckCircle className="w-4 h-4" />, color: '#3d6549', bg: '#fffefa', border: '#c2d0b9' },
+  error:   { icon: <AlertCircle className="w-4 h-4" />, color: '#a34436', bg: '#fffefa', border: '#e6c3b9' },
+  warning: { icon: <AlertTriangle className="w-4 h-4" />, color: '#866427', bg: '#fffefa', border: '#d9caa8' },
+  info:    { icon: <Info className="w-4 h-4" />, color: '#626d60', bg: '#fffefa', border: '#dadcd2' },
 }
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
@@ -31,7 +31,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastContext.Provider value={{ toast }}>
       {children}
-      <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 w-80 pointer-events-none">
+      <div className="fixed bottom-4 right-4 z-[70] flex flex-col gap-2 w-[min(22rem,calc(100vw-2rem))] pointer-events-none" aria-live="polite" aria-atomic="false">
         <AnimatePresence mode="popLayout">
           {toasts.map(t => {
             const c = config[t.type]
@@ -43,11 +43,12 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                 exit={{ opacity: 0, x: 40 }}
                 transition={{ type: 'spring', stiffness: 320, damping: 28 }}
                 className="pointer-events-auto flex items-start gap-3 px-4 py-3 rounded-lg"
-                style={{ background: c.bg, border: `1px solid ${c.border}`, boxShadow: '0 4px 16px rgba(0,0,0,0.5)' }}
+                role={t.type === 'error' ? 'alert' : 'status'}
+                style={{ background: c.bg, border: `1px solid ${c.border}`, boxShadow: '0 4px 24px rgba(36,44,40,0.1)' }}
               >
                 <span style={{ color: c.color }} className="shrink-0 mt-0.5">{c.icon}</span>
                 <p className="text-sm text-text flex-1">{t.message}</p>
-                <button onClick={() => remove(t.id)} className="shrink-0 text-muted hover:text-text transition-colors">
+                <button onClick={() => remove(t.id)} aria-label="Dismiss notification" className="shrink-0 text-muted hover:text-text transition-colors p-1">
                   <X className="w-3.5 h-3.5" />
                 </button>
               </motion.div>

@@ -1,187 +1,101 @@
 import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { CalendarDays, LayoutGrid, Map, ChevronLeft, ChevronRight, RotateCw } from 'lucide-react'
+import { CalendarDays, LayoutGrid, Map, ChevronLeft, ChevronRight, RotateCw, Clock3, ArrowUpRight } from 'lucide-react'
+import { addDays, format, isValid, parseISO } from 'date-fns'
 import { cn } from '@/lib/cn'
-import { todayStr, tomorrowStr, formatDate, maxBookingDate, isPastDate } from '@/lib/dates'
+import { todayStr, formatDate, maxBookingDate } from '@/lib/dates'
 import { useTables, useBookingsByDate } from '@/api/hooks'
 import { TableGrid } from '@/components/tables/TableGrid'
 import { FloorPlan } from '@/components/tables/FloorPlan'
 import { BookingDialog } from '@/components/booking/BookingDialog'
 import type { TableOut } from '@/api/types'
-import { addDays, format, parseISO } from 'date-fns'
 
 type ViewMode = 'grid' | 'floor'
 
 export function BookPage() {
   const [date, setDate] = useState(todayStr())
-  const [view, setView] = useState<ViewMode>(() => window.innerWidth >= 768 ? 'floor' : 'grid')
+  const [view, setView] = useState<ViewMode>('grid')
   const [selectedTable, setSelectedTable] = useState<TableOut | null>(null)
+  const tablesQuery = useTables()
+  const bookingsQuery = useBookingsByDate(date)
+  const tables = tablesQuery.data ?? []
+  const bookings = bookingsQuery.data ?? []
+  const loading = tablesQuery.isLoading || bookingsQuery.isLoading
+  const failed = tablesQuery.isError || bookingsQuery.isError
+  const refreshing = tablesQuery.isFetching || bookingsQuery.isFetching
+  const days = Array.from({ length: 7 }, (_, i) => addDays(new Date(), i))
 
-  const { data: tables = [], isLoading: tablesLoading } = useTables()
-  const { data: bookings = [], isLoading: bookingsLoading, refetch } = useBookingsByDate(date)
-
-  const isToday = date === todayStr()
-  const isTomorrow = date === tomorrowStr()
-  const isPast = isPastDate(date)
-
-  function shiftDate(days: number) {
-    const next = format(addDays(parseISO(date), days), 'yyyy-MM-dd')
-    if (next >= todayStr() && next <= maxBookingDate()) setDate(next)
+  function chooseDate(value: string) {
+    if (isValid(parseISO(value)) && value >= todayStr() && value <= maxBookingDate()) {
+      setDate(value)
+      setSelectedTable(null)
+    }
   }
+  function shiftDate(days: number) { chooseDate(format(addDays(parseISO(date), days), 'yyyy-MM-dd')) }
+  function refresh() { void tablesQuery.refetch(); void bookingsQuery.refetch() }
 
   return (
-    <div className="space-y-5">
-      {/* Page heading */}
-      <div>
-        <h1 className="text-xl font-semibold text-text tracking-tight">Reservations</h1>
-        <p className="text-sm text-muted mt-1">Select a date and book a table</p>
+    <div>
+      <div className="mb-9 flex flex-wrap items-end justify-between gap-5">
+        <div>
+          <p className="section-kicker mb-3">At the club</p>
+          <h1 className="page-heading">Book a table.</h1>
+          <p className="mt-3 text-sm leading-6 text-dim">Choose a day and check the available tables.</p>
+        </div>
+        <div className="flex items-center gap-3 border-l-2 border-gold-border pl-4">
+          <Clock3 className="h-5 w-5 text-gold" />
+          <div><p className="section-kicker">Club hours</p><p className="mt-1 text-sm font-semibold text-text">10:00 to 22:00</p></div>
+        </div>
       </div>
 
-      {/* Controls */}
-      <div
-        className="flex flex-wrap items-center gap-2 p-3 rounded-lg"
-        style={{ background: '#111', border: '1px solid #1e1e1e' }}
-      >
-        {/* Shortcuts */}
-        {[
-          { label: 'Today',    value: todayStr()    },
-          { label: 'Tomorrow', value: tomorrowStr() },
-        ].map(d => (
-          <button
-            key={d.value}
-            onClick={() => setDate(d.value)}
-            className={cn(
-              'btn btn-secondary text-xs py-1.5 px-3',
-              date === d.value && 'border-gold-border text-gold',
-            )}
-            style={date === d.value ? { borderColor: 'rgba(232,201,109,0.3)', color: '#e8c96d', background: 'rgba(232,201,109,0.06)' } : {}}
-          >
-            {d.label}
-          </button>
-        ))}
-
-        {/* Date nav */}
-        <div className="flex items-center gap-1.5 ml-auto">
-          <button
-            onClick={() => shiftDate(-1)}
-            disabled={date <= todayStr()}
-            className="btn-icon"
-          >
-            <ChevronLeft className="w-3.5 h-3.5" />
-          </button>
-
-          <div
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md"
-            style={{ border: '1px solid #2e2e2e', background: '#0a0a0a' }}
-          >
-            <CalendarDays className="w-3.5 h-3.5 shrink-0 text-muted" />
-            <input
-              type="date"
-              value={date}
-              min={todayStr()}
-              max={maxBookingDate()}
-              onChange={e => setDate(e.target.value)}
-              className="bg-transparent text-xs outline-none w-28 text-dim"
-              style={{ fontFamily: 'inherit' }}
-            />
+      <section aria-label="Choose a date" className="card mb-8 p-4 sm:p-5">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <span className="section-kicker">01 <span className="ml-2 text-dim">Choose your day</span></span>
+          <div className="flex items-center gap-2">
+            <button onClick={() => shiftDate(-1)} disabled={date <= todayStr()} aria-label="Previous day" className="btn-icon h-10 min-h-10 w-10"><ChevronLeft className="h-4 w-4" /></button>
+            <label className="flex min-h-10 items-center gap-2 rounded-md border border-border px-3 text-xs text-dim">
+              <CalendarDays className="h-4 w-4" />
+              <span className="sr-only">Booking date</span>
+              <input type="date" value={date} min={todayStr()} max={maxBookingDate()} onChange={e => chooseDate(e.target.value)} className="w-[122px] bg-transparent py-2 outline-none focus:text-gold" />
+            </label>
+            <button onClick={() => shiftDate(1)} disabled={date >= maxBookingDate()} aria-label="Next day" className="btn-icon h-10 min-h-10 w-10"><ChevronRight className="h-4 w-4" /></button>
           </div>
-
-          <button
-            onClick={() => shiftDate(1)}
-            disabled={date >= maxBookingDate()}
-            className="btn-icon"
-          >
-            <ChevronRight className="w-3.5 h-3.5" />
-          </button>
         </div>
-
-        {/* View toggle */}
-        <div
-          className="flex items-center gap-0.5 p-1 rounded-md"
-          style={{ border: '1px solid #2e2e2e', background: '#0a0a0a' }}
-        >
-          {([
-            { mode: 'grid',  icon: <LayoutGrid className="w-3.5 h-3.5" />, label: 'Grid' },
-            { mode: 'floor', icon: <Map className="w-3.5 h-3.5" />,        label: 'Floor plan' },
-          ] as const).map(({ mode, icon, label }) => (
-            <button
-              key={mode}
-              onClick={() => setView(mode)}
-              title={label}
-              className="px-2 py-1.5 rounded transition-all text-xs flex items-center gap-1.5"
-              style={{
-                background: view === mode ? '#222' : 'transparent',
-                color: view === mode ? '#ebebeb' : '#666',
-                border: view === mode ? '1px solid #333' : '1px solid transparent',
-              }}
-            >
-              {icon}
-              <span className="hidden sm:block">{label}</span>
-            </button>
-          ))}
+        <div className="grid grid-cols-7 gap-1.5 sm:gap-3">
+          {days.map((day, i) => {
+            const value = format(day, 'yyyy-MM-dd')
+            const active = date === value
+            return (
+              <button key={value} onClick={() => chooseDate(value)} aria-pressed={active} aria-label={formatDate(value)} className={cn('flex min-h-[86px] flex-col items-center justify-center rounded-md border py-3 transition-colors sm:min-h-[102px]', active ? 'border-gold bg-gold text-surface' : 'border-border bg-bg text-text hover:border-border-strong hover:bg-raised')}>
+                <span className={cn('text-[9px] font-semibold sm:text-[11px]', active ? 'text-[#d7dfcf]' : 'text-muted')}>{i === 0 ? 'Today' : format(day, 'EEE')}</span>
+                <span className="mt-1 font-display text-[26px] leading-tight sm:text-[32px]">{format(day, 'dd')}</span>
+                <span className={cn('mt-1 text-[9px] sm:text-[10px]', active ? 'text-[#d7dfcf]' : 'text-muted')}>{format(day, 'MMM')}</span>
+              </button>
+            )
+          })}
         </div>
+      </section>
 
-        <button
-          onClick={() => refetch()}
-          title="Refresh"
-          className="btn-icon"
-        >
-          <RotateCw className={cn('w-3.5 h-3.5', bookingsLoading && 'animate-spin')} />
-        </button>
-      </div>
-
-      {/* Date label */}
-      <div className="flex items-center gap-3">
-        <div className="flex-1 divider" />
-        <span className="text-xs text-muted whitespace-nowrap">
-          {formatDate(date)}
-          {isToday    && ' · Today'}
-          {isTomorrow && ' · Tomorrow'}
-          {isPast     && ' · Past'}
-        </span>
-        <div className="flex-1 divider" />
-      </div>
-
-      {/* Skeleton */}
-      {(tablesLoading || bookingsLoading) && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div
-              key={i}
-              className="rounded-lg animate-pulse"
-              style={{ height: '88px', background: '#111', border: '1px solid #1e1e1e' }}
-            />
-          ))}
+      <section aria-label="Choose a table">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <p className="section-kicker">02 <span className="ml-2 text-dim">Choose your table</span></p>
+            <h2 className="mt-2 text-sm font-semibold text-text">{formatDate(date)}</h2>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="flex rounded-md border border-border bg-raised p-1" aria-label="Table view">
+              {([{ mode: 'grid', Icon: LayoutGrid, label: 'Tables' }, { mode: 'floor', Icon: Map, label: 'Room plan' }] as const).map(({ mode, Icon, label }) => (
+                <button key={mode} onClick={() => setView(mode)} aria-pressed={view === mode} className={cn('flex min-h-9 items-center gap-2 rounded px-3 text-xs font-semibold transition-colors', view === mode ? 'bg-surface text-gold shadow-sm' : 'text-muted hover:text-text')}><Icon className="h-3.5 w-3.5" />{label}</button>
+              ))}
+            </div>
+            <button onClick={refresh} disabled={refreshing} aria-label="Refresh availability" title="Refresh availability" className="btn-icon"><RotateCw className={cn('h-4 w-4', refreshing && 'animate-spin')} /></button>
+          </div>
         </div>
-      )}
-
-      {/* Content */}
-      {!tablesLoading && !bookingsLoading && (
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={view}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-          >
-            {view === 'grid'
-              ? <TableGrid tables={tables} bookings={bookings} onTableClick={setSelectedTable} />
-              : <FloorPlan  tables={tables} bookings={bookings} onTableClick={setSelectedTable} />
-            }
-          </motion.div>
-        </AnimatePresence>
-      )}
-
-      {selectedTable && (
-        <BookingDialog
-          table={selectedTable}
-          date={date}
-          bookings={bookings}
-          onClose={() => setSelectedTable(null)}
-          onRefresh={() => refetch()}
-        />
-      )}
+        {loading && <div role="status" aria-label="Loading tables" className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">{Array.from({ length: 6 }, (_, i) => <div key={i} className="h-56 animate-pulse rounded-lg border border-border bg-surface" />)}</div>}
+        {!loading && failed && <div className="card flex flex-wrap items-center justify-between gap-4 p-6" role="alert"><div><h3 className="text-sm font-semibold">We couldn't load the tables</h3><p className="mt-2 text-sm text-dim">Check your connection and try again.</p></div><button onClick={refresh} disabled={refreshing} className="btn-secondary">Try again <RotateCw className="h-4 w-4" /></button></div>}
+        {!loading && !failed && (view === 'grid' ? <TableGrid tables={tables} bookings={bookings} onTableClick={setSelectedTable} /> : <FloorPlan tables={tables} bookings={bookings} onTableClick={setSelectedTable} />)}
+        {!loading && !failed && tables.some(table => table.is_active) && <p className="mt-5 flex items-center gap-2 text-xs text-muted"><ArrowUpRight className="h-3.5 w-3.5" />Choose a table to see available times.</p>}
+      </section>
+      {selectedTable && <BookingDialog table={selectedTable} date={date} bookings={bookings} onClose={() => setSelectedTable(null)} onRefresh={() => { void bookingsQuery.refetch() }} />}
     </div>
   )
 }

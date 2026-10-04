@@ -1,84 +1,42 @@
 import { NavLink, Outlet } from 'react-router-dom'
+import { CalendarDays, Bookmark, Settings, LogOut, Clock3 } from 'lucide-react'
 import { useSession } from '@/auth/SessionContext'
-import { CalendarDays, BookOpen, Settings, LogOut } from 'lucide-react'
+import { Brand } from './Brand'
 import { cn } from '@/lib/cn'
 
 export function Layout() {
   const { session, logout, isAdmin } = useSession()
-
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: '#0a0a0a' }}>
-      <header
-        className="sticky top-0 z-40"
-        style={{
-          background: 'rgba(10,10,10,0.85)',
-          borderBottom: '1px solid #1e1e1e',
-          backdropFilter: 'blur(10px)',
-          WebkitBackdropFilter: 'blur(10px)',
-        }}
-      >
-        <div className="max-w-6xl mx-auto px-5 h-12 flex items-center justify-between gap-4">
-          {/* Logo */}
-          <NavLink to="/book" className="flex items-center gap-2.5 shrink-0 group">
-            <div
-              className="w-7 h-7 rounded-md flex items-center justify-center text-sm"
-              style={{ background: '#161616', border: '1px solid #2e2e2e' }}
-            >
-              ⚔️
-            </div>
-            <span
-              className="font-display text-sm font-bold hidden sm:block"
-              style={{ color: '#e8c96d', letterSpacing: '0.03em' }}
-            >
-              Iron Crusader
-            </span>
-          </NavLink>
-
-          {/* Nav */}
-          <nav className="flex items-center gap-0.5">
+    <div className="min-h-screen flex flex-col bg-bg">
+      <a href="#main-content" onClick={event => { event.preventDefault(); document.getElementById('main-content')?.focus() }} className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:bg-surface focus:p-4">Skip to content</a>
+      <header className="border-b border-border bg-surface">
+        <div className="mx-auto flex max-w-[1200px] flex-wrap items-center justify-between gap-x-5 px-5 pt-5 sm:px-8 lg:py-5">
+          <Brand />
+          <nav aria-label="Main navigation" className="order-3 flex w-full gap-1 pt-4 pb-3 lg:order-none lg:w-auto lg:p-0">
             {[
-              { to: '/book',  icon: <CalendarDays className="w-3.5 h-3.5" />, label: 'Book' },
-              { to: '/my',   icon: <BookOpen className="w-3.5 h-3.5" />,    label: 'My Bookings' },
-              ...(isAdmin ? [{ to: '/admin', icon: <Settings className="w-3.5 h-3.5" />, label: 'Admin' }] : []),
-            ].map(({ to, icon, label }) => (
-              <NavLink
-                key={to}
-                to={to}
-                className={({ isActive }) => cn('nav-item', isActive && 'active')}
-              >
-                {icon}
-                <span className="hidden sm:block">{label}</span>
+              { to: '/book', Icon: CalendarDays, label: 'Book a table' },
+              { to: '/my', Icon: Bookmark, label: 'My bookings' },
+              ...(isAdmin ? [{ to: '/admin', Icon: Settings, label: 'Manage club' }] : []),
+            ].map(({ to, Icon, label }) => (
+              <NavLink key={to} to={to} className={({ isActive }) => cn('nav-item flex-1 px-2 text-xs sm:flex-none sm:px-3.5 sm:text-[13px]', isActive && 'active')}>
+                <Icon className="h-4 w-4 shrink-0" /><span>{label}</span>
               </NavLink>
             ))}
           </nav>
-
-          {/* User */}
-          <div className="flex items-center gap-2 shrink-0">
-            {session && (
-              <div className="hidden sm:block text-right">
-                <div className="text-sm font-medium text-text leading-none">{session.user_name}</div>
-                {isAdmin && <div className="text-xs text-gold mt-0.5">Admin</div>}
-              </div>
-            )}
-            <button
-              onClick={logout}
-              title="Sign out"
-              className="btn-icon"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-            </button>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <span className="hidden max-w-36 truncate text-xs font-semibold text-dim sm:block">{session?.user_name}</span>
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-raised text-xs font-bold text-gold" aria-hidden="true">
+              {session?.user_name?.trim().slice(0, 2).toUpperCase()}
+            </div>
+            <button onClick={logout} aria-label="Sign out" title="Sign out" className="btn-icon border-transparent"><LogOut className="h-4 w-4" /></button>
           </div>
         </div>
       </header>
-
-      <main className="flex-1 max-w-6xl mx-auto px-5 py-7 w-full">
-        <Outlet />
-      </main>
-
-      <footer style={{ borderTop: '1px solid #1e1e1e' }} className="py-4">
-        <div className="max-w-6xl mx-auto px-5 flex items-center justify-between">
-          <span className="text-xs text-subtle">Iron Crusader Warhammer Club</span>
-          <span className="text-xs text-subtle">10:00 – 22:00</span>
+      <main id="main-content" tabIndex={-1} className="mx-auto w-full max-w-[1200px] flex-1 px-5 py-8 outline-none sm:px-8 sm:py-12"><Outlet /></main>
+      <footer className="border-t border-border">
+        <div className="mx-auto flex max-w-[1200px] flex-wrap items-center justify-between gap-3 px-5 py-5 text-[11px] text-muted sm:px-8">
+          <span className="font-semibold tracking-wide">IRON CRUSADER <span className="ml-2 font-normal tracking-normal">Warhammer Club</span></span>
+          <span className="flex items-center gap-2"><Clock3 className="h-3.5 w-3.5" />Club hours 10:00 to 22:00</span>
         </div>
       </footer>
     </div>

@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Iron Crusader | Local UI fixture</title>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Oswald:wght@400;500;600&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <div style="position:fixed;bottom:8px;left:8px;z-index:80;padding:6px 10px;background:#244b3c;color:#fffefa;border-radius:4px;font:11px Arial,sans-serif;pointer-events:none">Local preview / Sample data</div>
+    <script type="module">
+      // Local UI fixture only. Vite's production build does not include this entry.
+      if (!['localhost', '127.0.0.1'].includes(location.hostname)) throw new Error('Local fixture only')
+      const params = new URLSearchParams(location.search)
+      const token = 'fixture-only-not-a-real-token'
+      const session = { token, user_id: 42, user_name: 'Alex', is_admin: params.get('role') !== 'member', expires_at: Date.now() + 3600000 }
+      sessionStorage.setItem('ic.fixture.original-session', localStorage.getItem('ic.session.v1') ?? '')
+      localStorage.setItem('ic.session.v1', JSON.stringify(session))
+      const tables = [
+        { id: 1, name: 'The Bastion', emoji: '', is_active: true },
+        { id: 2, name: 'The Outpost', emoji: '', is_active: true },
+        { id: 3, name: 'The Foundry', emoji: '', is_active: true },
+        { id: 4, name: 'The Citadel', emoji: '', is_active: true },
+        { id: 5, name: 'The Watchtower', emoji: '', is_active: true },
+        { id: 6, name: 'The Wasteland', emoji: '', is_active: true },
+      ]
+      const date = new Date().toLocaleDateString('en-CA')
+      let bookings = params.has('empty') ? [] : [
+        { id: 1, table_id: 1, user_id: 7, user_name: 'Sam', date, start_time: '12:00:00', end_time: '15:00:00', created_at: new Date().toISOString() },
+        { id: 2, table_id: 2, user_id: 42, user_name: 'Alex', date, start_time: '17:00:00', end_time: '20:00:00', created_at: new Date().toISOString() },
+        { id: 3, table_id: 3, user_id: 7, user_name: 'Sam', date, start_time: '10:00:00', end_time: '22:00:00', created_at: new Date().toISOString() },
+      ]
+      let nextId = 10
+      const originalFetch = window.fetch.bind(window)
+      window.fetch = async (input, options = {}) => {
+        const url = new URL(typeof input === 'string' ? input : input.url, location.origin)
+        if (!url.pathname.startsWith('/api/')) return originalFetch(input, options)
+        const response = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } })
+        if (params.has('error')) return response({ detail: 'Fixture server error' }, 503)
+        const path = url.pathname.replace('/api/v1', '').replace('/admin', '')
+        const method = options.method ?? 'GET'
+        if (method === 'DELETE') { bookings = bookings.filter(item => item.id !== Number(path.split('/').pop())); return new Response(null, { status: 204 }) }
+        if (method === 'POST' && path === '/bookings') {
+          const data = JSON.parse(options.body)
+          const conflict = bookings.some(item => item.table_id === data.table_id && item.date === data.date && item.start_time < data.end_time && item.end_time > data.start_time)
+          if (conflict) return response({ detail: 'Already booked' }, 409)
+          const item = { ...data, id: nextId++, user_id: 42, user_name: 'Alex', created_at: new Date().toISOString() }
+          bookings.push(item)
+          return response(item)
+        }
+        if (method === 'POST' && path === '/tables') { const table = { id: nextId++, is_active: true, ...JSON.parse(options.body) }; tables.push(table); return response(table) }
+        if (method === 'PATCH' && path.startsWith('/tables/')) { const table = tables.find(item => item.id === Number(path.split('/').pop())); Object.assign(table, JSON.parse(options.body)); return response(table) }
+        if (path === '/tables') return response(params.has('empty') ? [] : tables)
+        if (path === '/bookings/my') return response(bookings.filter(item => item.user_id === 42))
+        if (path === '/bookings') return response(bookings.filter(item => item.date === url.searchParams.get('date')))
+        if (path === '/auth/me') return response({ user_id: 42, user_name: 'Alex', is_admin: session.is_admin })
+        return response({ detail: 'Fixture route not found' }, 404)
+      }
+      window.addEventListener('pagehide', () => {
+        if (localStorage.getItem('ic.session.v1')?.includes(token)) {
+          const previous = sessionStorage.getItem('ic.fixture.original-session')
+          if (previous) localStorage.setItem('ic.session.v1', previous)
+          else localStorage.removeItem('ic.session.v1')
+        }
+      }, { once: true })
+      await import('/src/main.tsx')
+    </script>
+  </body>
+</html>

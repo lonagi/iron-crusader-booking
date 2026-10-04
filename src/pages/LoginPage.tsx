@@ -1,201 +1,80 @@
-import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { motion, AnimatePresence } from 'framer-motion'
-import { ExternalLink, Key, ChevronDown, ChevronUp, ArrowRight } from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { ArrowUpRight, Clock3 } from 'lucide-react'
 import { useSession } from '@/auth/SessionContext'
-import { useToast } from '@/lib/toast'
-import type { TelegramAuthData } from '@/api/types'
+import { getTelegramCallback } from '@/auth/telegramCallback'
+import { Brand } from '@/components/Brand'
+import { TelegramSignIn } from '@/components/TelegramSignIn'
 
-const BOT_USERNAME = import.meta.env.VITE_TG_BOT_USERNAME || ''
-const API_BASE     = import.meta.env.VITE_API_BASE_URL || ''
-const SWAGGER_URL  = `${API_BASE}/docs`
-
-declare global {
-  interface Window {
-    onTelegramAuth?: (user: TelegramAuthData) => void
-    Telegram?: { WebApp?: unknown }
-  }
-}
-
-// ── Telegram widget ───────────────────────────────────────────────────────────
-
-function TelegramWidget({ botUsername }: { botUsername: string }) {
-  const { login } = useSession()
-  const navigate  = useNavigate()
-  const toast     = useToast()
-  const ref       = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    window.onTelegramAuth = async (user: TelegramAuthData) => {
-      try {
-        await login(user)
-        toast('Signed in as ' + user.first_name, 'success')
-        navigate('/book', { replace: true })
-      } catch (err) {
-        toast(err instanceof Error ? err.message : 'Auth failed', 'error')
-      }
-    }
-
-    if (ref.current && !ref.current.querySelector('script')) {
-      const script = document.createElement('script')
-      script.src = 'https://telegram.org/js/telegram-widget.js?22'
-      script.setAttribute('data-telegram-login', botUsername)
-      script.setAttribute('data-size', 'large')
-      script.setAttribute('data-userpic', 'false')
-      script.setAttribute('data-radius', '6')
-      script.setAttribute('data-onauth', 'onTelegramAuth(user)')
-      script.setAttribute('data-request-access', 'write')
-      script.async = true
-      ref.current.appendChild(script)
-    }
-
-    return () => { delete window.onTelegramAuth }
-  }, [botUsername, login, navigate, toast])
-
-  return <div ref={ref} className="flex justify-center py-1" />
-}
-
-// ── Token fallback ────────────────────────────────────────────────────────────
-
-function TokenFallback() {
-  const { loginWithToken } = useSession()
-  const navigate = useNavigate()
-  const toast    = useToast()
-  const [open,    setOpen]    = useState(false)
-  const [token,   setToken]   = useState('')
-  const [loading, setLoading] = useState(false)
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    if (!token.trim()) return
-    setLoading(true)
-    try {
-      await loginWithToken(token.trim())
-      toast('Signed in', 'success')
-      navigate('/book', { replace: true })
-    } catch (err) {
-      toast(err instanceof Error ? err.message : 'Invalid token', 'error')
-    } finally {
-      setLoading(false)
-    }
-  }
-
+function TableIllustration() {
   return (
-    <div className="mt-4">
-      <button
-        onClick={() => setOpen(p => !p)}
-        className="w-full flex items-center justify-center gap-1.5 text-xs text-muted hover:text-dim transition-colors py-1"
-      >
-        <Key className="w-3 h-3" />
-        Sign in with API token instead
-        {open ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-      </button>
-
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.18 }}
-            style={{ overflow: 'hidden' }}
-          >
-            <div className="pt-3 space-y-2">
-              {/* Mini help */}
-              <div className="card p-3 space-y-2">
-                <p className="text-xs text-muted">Get a token from Swagger UI:</p>
-                <ol className="space-y-1">
-                  {[
-                    'POST /api/v1/auth/telegram → Try it out',
-                    'Fill in your Telegram user data → Execute',
-                    'Copy access_token from response',
-                  ].map((s, i) => (
-                    <li key={i} className="flex items-start gap-2 text-xs text-muted">
-                      <span className="shrink-0 w-4 h-4 rounded-full bg-raised border border-border flex items-center justify-center text-[9px] font-medium mt-0.5">{i + 1}</span>
-                      {s}
-                    </li>
-                  ))}
-                </ol>
-                <a href={SWAGGER_URL} target="_blank" rel="noreferrer" className="btn btn-secondary w-full justify-center text-xs">
-                  <ExternalLink className="w-3.5 h-3.5" />
-                  Open Swagger UI
-                </a>
-              </div>
-
-              <form onSubmit={handleSubmit} className="space-y-2">
-                <textarea
-                  value={token}
-                  onChange={e => setToken(e.target.value)}
-                  placeholder="eyJhbGci…"
-                  rows={3}
-                  className="input font-mono resize-none"
-                  style={{ fontSize: '11px', lineHeight: 1.6 }}
-                  spellCheck={false}
-                />
-                <button type="submit" disabled={!token.trim() || loading} className="btn btn-primary w-full justify-center">
-                  {loading ? 'Checking…' : 'Sign in'}
-                  {!loading && <ArrowRight className="w-3.5 h-3.5" />}
-                </button>
-              </form>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+    <svg viewBox="0 0 520 330" fill="none" className="w-full" aria-hidden="true">
+      <g stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round">
+        <path d="m47 136 238-100 191 127-238 119L47 136Z" fill="#c5d0a8" fillOpacity=".05" />
+        <path d="M47 136v16l191 148 238-120v-17M238 282v18M69 169v37l15 11v-36m364 13v37l-15 8v-37M223 289v27l15 11v-27" />
+        <path d="m80 133 204-85 156 111-202 103L80 133Z" strokeOpacity=".3" strokeDasharray="3 5" />
+        <path d="m110 133 41-18 41 29-42 20-40-31Z" fill="#c5d0a8" fillOpacity=".14" />
+        <path d="M110 133v-39l15-6v20l26-11v18m0-18 41 28v19M110 94l41 28v22m-27-31 41 29" />
+        <path d="m274 110 45-20 48 31-45 22-48-33Z" fill="#c5d0a8" fillOpacity=".14" />
+        <path d="M274 110V74l16-7v21l29-13v15m0-15 48 30v16m-45 22v-19l45-19" />
+        <path d="m219 208 37-18 41 29-39 20-39-31Z" fill="#c5d0a8" fillOpacity=".14" />
+        <path d="M219 208v-38l13-6v23l24-12v15m0-15 41 29v15m-39 20v-19l39-16" />
+        <ellipse cx="231" cy="136" rx="13" ry="7" /><path d="M226 135v-14l5-5 5 5v14m-5-19v-7m-11 17 6-5m10 0 6 5" />
+        <ellipse cx="330" cy="182" rx="13" ry="7" /><path d="M325 181v-14l5-5 5 5v14m-5-19v-7m-11 17 6-5m10 0 6 5" />
+        <ellipse cx="171" cy="193" rx="13" ry="7" /><path d="M166 192v-14l5-5 5 5v14m-5-19v-7m-11 17 6-5m10 0 6 5" />
+        <path d="m220 76-83 35m270 85-89 43" strokeOpacity=".4" strokeDasharray="3 5" />
+        <path d="m416 80 25-9 20 14-25 10-20-15Z M416 80v21l20 15 25-11V85m-25 10v21" />
+        <circle cx="437" cy="81" r="1.4" fill="currentColor" /><path d="m424 94 4 3m17 4 4-2" strokeWidth="2.5" />
+      </g>
+    </svg>
   )
 }
 
-// ── Page ──────────────────────────────────────────────────────────────────────
-
 export function LoginPage() {
   const { session } = useSession()
-  const navigate    = useNavigate()
-
+  const navigate = useNavigate()
+  const location = useLocation()
+  const [awaitingCallback, setAwaitingCallback] = useState(() => {
+    const callback = getTelegramCallback()
+    return Boolean(callback.data || callback.error)
+  })
+  const finishSignIn = useCallback(() => setAwaitingCallback(false), [])
   useEffect(() => {
-    if (session) navigate('/book', { replace: true })
-  }, [session, navigate])
+    if (session && !awaitingCallback) {
+      const from = location.state?.from
+      const path = typeof from?.pathname === 'string' && /^\/(book|my|admin)(\/|$)/.test(from.pathname) ? from.pathname : '/book'
+      navigate(path, { replace: true })
+    }
+  }, [session, awaitingCallback, navigate, location.state])
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: '#0a0a0a' }}>
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.25, ease: 'easeOut' }}
-        className="w-full max-w-[360px]"
-      >
-        {/* Logo */}
-        <div className="flex items-center gap-3 mb-8">
-          <div
-            className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 text-lg"
-            style={{ background: '#161616', border: '1px solid #2e2e2e' }}
-          >
-            ⚔️
-          </div>
-          <div>
-            <div className="font-display text-base font-bold" style={{ color: '#e8c96d', letterSpacing: '0.03em' }}>
-              Iron Crusader
-            </div>
-            <div className="text-xs text-muted mt-0.5">Warhammer Club · Table Booking</div>
+    <main className="grid min-h-screen bg-bg lg:grid-cols-[1.05fr_1fr]">
+      <section className="login-poster flex flex-col justify-between px-8 py-9 sm:px-14 sm:py-12 lg:min-h-screen lg:px-16">
+        <Brand inverse />
+        <div className="relative z-10 mt-8 lg:my-9">
+          <p className="mb-5 text-[10px] font-semibold uppercase tracking-[.22em] text-[#c5d0a8]">Table bookings</p>
+          <h1 className="font-display text-[42px] font-medium uppercase leading-[1.06] tracking-[-.025em] sm:text-[60px] xl:text-[72px]">Bring your army.<br /><span className="text-[#c5d0a8]">We'll keep<br className="hidden lg:block" /> a table.</span></h1>
+          <div className="mx-auto mt-5 hidden max-w-[410px] text-[#c5d0a8] lg:block"><TableIllustration /></div>
+        </div>
+        <div className="relative z-10 mt-8 flex items-center justify-between border-t border-[#f5f3ed30] pt-5 text-xs text-[#d7dfcf]">
+          <span>Club hours</span><span>10:00 to 22:00</span>
+        </div>
+      </section>
+      <section className="flex flex-col justify-between px-7 py-10 sm:px-14 sm:py-12 lg:px-16">
+        <p className="section-kicker hidden text-right lg:block">Club reservations <ArrowUpRight className="ml-2 inline h-3.5 w-3.5" /></p>
+        <div className="mx-auto w-full max-w-[370px] py-5 lg:py-16">
+          <p className="section-kicker mb-4">Your next game</p>
+          <h2 className="font-display text-[44px] font-medium uppercase leading-tight tracking-tight sm:text-[52px]">Book a table.</h2>
+          <p className="mt-4 text-sm leading-7 text-dim">Sign in with Telegram, choose a table and pick a time. Your bookings will be saved here.</p>
+          <div className="mt-9"><TelegramSignIn onSuccess={finishSignIn} /></div>
+          {session && awaitingCallback && <button type="button" onClick={finishSignIn} className="mt-4 w-full py-1 text-sm text-muted underline underline-offset-4 hover:text-text">Keep my current account</button>}
+          <div className="mt-9 flex items-start gap-3 border-t border-border pt-6">
+            <Clock3 className="mt-0.5 h-4 w-4 shrink-0 text-muted" />
+            <p className="text-xs leading-6 text-muted">Club hours 10:00 to 22:00.<br />Book up to 30 days ahead.</p>
           </div>
         </div>
-
-        <h1 className="text-2xl font-semibold text-text tracking-tight mb-1">Sign in</h1>
-        <p className="text-sm text-muted mb-6">Continue with Telegram</p>
-
-        {/* Always show Telegram widget */}
-        {BOT_USERNAME ? (
-          <TelegramWidget botUsername={BOT_USERNAME} />
-        ) : (
-          <div className="card p-4 text-center">
-            <p className="text-sm text-muted">
-              Telegram widget not configured.<br />
-              Set <code className="text-gold bg-raised px-1 rounded text-xs">VITE_TG_BOT_USERNAME</code> in <code className="text-xs">.env</code>
-            </p>
-          </div>
-        )}
-
-        <p className="text-xs text-subtle mt-8 text-center">Club open 10:00 – 22:00</p>
-      </motion.div>
-    </div>
+        <p className="mx-auto mt-6 w-full max-w-[370px] text-[11px] leading-5 text-muted">Iron Crusader Warhammer Club</p>
+      </section>
+    </main>
   )
 }

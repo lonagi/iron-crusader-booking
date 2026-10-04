@@ -1,22 +1,18 @@
 import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { ArrowLeft } from 'lucide-react'
 
 export function NotFoundPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: '#0a0a0a' }}>
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-        className="card max-w-sm w-full p-10 text-center"
-      >
-        <div className="text-4xl mb-5">404</div>
-        <h2 className="text-lg font-semibold text-text mb-2">Page not found</h2>
-        <p className="text-sm text-muted mb-6">The page you're looking for doesn't exist.</p>
-        <Link to="/" className="btn btn-primary inline-flex">
-          Go home
+    <main className="flex min-h-screen items-center justify-center bg-bg px-6 py-12">
+      <div className="w-full max-w-md">
+        <p className="label mb-8">Iron Crusader</p>
+        <p className="font-display text-8xl leading-none text-gold">404</p>
+        <h1 className="mt-6 font-display text-3xl text-text">Page not found</h1>
+        <p className="mt-3 text-sm leading-relaxed text-dim">This link may have moved. Head back to find a table for your next game.</p>
+        <Link to="/book" className="btn btn-primary mt-7">
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Back to bookings
         </Link>
-      </motion.div>
-    </div>
+      </div>
+    </main>
   )
 }

@@ -1,4 +1,5 @@
 import { motion, type Variants } from 'framer-motion'
+import { Armchair } from 'lucide-react'
 import { TableCard } from './TableCard'
 import type { BookingOut, TableOut } from '@/api/types'
 
@@ -25,9 +26,10 @@ export function TableGrid({ tables, bookings, onTableClick }: TableGridProps) {
 
   if (activeTables.length === 0) {
     return (
-      <div className="text-center py-16">
-        <div className="text-4xl mb-3 opacity-40">🎲</div>
-        <p className="text-sm text-muted">No active tables configured</p>
+      <div className="rounded-lg border border-dashed border-border bg-surface px-6 py-16 text-center">
+        <Armchair className="mx-auto mb-4 h-7 w-7 text-muted" aria-hidden="true" />
+        <h3 className="font-display text-2xl text-text">No tables available</h3>
+        <p className="mt-2 text-sm text-dim">The club has not added any tables yet. Check back soon.</p>
       </div>
     )
   }
@@ -37,7 +39,7 @@ export function TableGrid({ tables, bookings, onTableClick }: TableGridProps) {
       variants={container}
       initial="hidden"
       animate="show"
-      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+      className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-5"
     >
       {activeTables.map((table) => (
         <motion.div key={table.id} variants={item}>

@@ -11,6 +11,7 @@ export interface TelegramAuthData {
 export interface TokenResponse {
   access_token: string
   token_type: string
+  expires_in?: number
   user_id: number
   user_name: string
   is_admin: boolean
