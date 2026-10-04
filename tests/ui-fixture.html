@@ -1,22 +1,50 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Iron Crusader | Local UI fixture</title>
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Oswald:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="icon" type="image/jpeg" href="/iron-crusader-booking/club-logo.jpg" />
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Oswald:wght@400;500;600&family=Roboto+Condensed:wght@400;500;600;700&display=swap" rel="stylesheet" />
   </head>
   <body>
     <div id="root"></div>
-    <div style="position:fixed;bottom:8px;left:8px;z-index:80;padding:6px 10px;background:#244b3c;color:#fffefa;border-radius:4px;font:11px Arial,sans-serif;pointer-events:none">Local preview / Sample data</div>
+    <div style="position:fixed;bottom:8px;left:8px;z-index:80;padding:6px 10px;background:#7c3227;color:#fffefa;border-radius:4px;font:11px Arial,sans-serif;pointer-events:none">Local preview / Sample data</div>
     <script type="module">
       // Local UI fixture only. Vite's production build does not include this entry.
       if (!['localhost', '127.0.0.1'].includes(location.hostname)) throw new Error('Local fixture only')
       const params = new URLSearchParams(location.search)
+      if (params.has('no-webgl')) {
+        const originalContext = HTMLCanvasElement.prototype.getContext
+        HTMLCanvasElement.prototype.getContext = function (kind, ...options) {
+          return kind === 'webgl' || kind === 'webgl2' ? null : originalContext.call(this, kind, ...options)
+        }
+      }
       const token = 'fixture-only-not-a-real-token'
       const session = { token, user_id: 42, user_name: 'Alex', is_admin: params.get('role') !== 'member', expires_at: Date.now() + 3600000 }
-      sessionStorage.setItem('ic.fixture.original-session', localStorage.getItem('ic.session.v1') ?? '')
-      localStorage.setItem('ic.session.v1', JSON.stringify(session))
+      // Keep sample credentials inside this document, including across Vite updates.
+      // Preferences still use the real store, but opening a preview cannot sign
+      // another tab in or out of the actual application.
+      const persistentStorage = window.localStorage
+      let fixtureSession = JSON.stringify(session)
+      Object.defineProperty(window, 'localStorage', {
+        configurable: true,
+        value: new Proxy(persistentStorage, {
+          get(target, property) {
+            if (property === 'getItem') return key => key === 'ic.session.v1' ? fixtureSession : target.getItem(key)
+            if (property === 'setItem') return (key, value) => {
+              if (key === 'ic.session.v1') fixtureSession = String(value)
+              else target.setItem(key, value)
+            }
+            if (property === 'removeItem') return key => {
+              if (key === 'ic.session.v1') fixtureSession = null
+              else target.removeItem(key)
+            }
+            const value = Reflect.get(target, property, target)
+            return typeof value === 'function' ? value.bind(target) : value
+          },
+        }),
+      })
       const tables = [
         { id: 1, name: 'The Bastion', emoji: '', is_active: true },
         { id: 2, name: 'The Outpost', emoji: '', is_active: true },
@@ -57,13 +85,6 @@
         if (path === '/auth/me') return response({ user_id: 42, user_name: 'Alex', is_admin: session.is_admin })
         return response({ detail: 'Fixture route not found' }, 404)
       }
-      window.addEventListener('pagehide', () => {
-        if (localStorage.getItem('ic.session.v1')?.includes(token)) {
-          const previous = sessionStorage.getItem('ic.fixture.original-session')
-          if (previous) localStorage.setItem('ic.session.v1', previous)
-          else localStorage.removeItem('ic.session.v1')
-        }
-      }, { once: true })
       await import('/src/main.tsx')
     </script>
   </body>

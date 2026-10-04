@@ -2,6 +2,7 @@ import { motion, type Variants } from 'framer-motion'
 import { Armchair } from 'lucide-react'
 import { TableCard } from './TableCard'
 import type { BookingOut, TableOut } from '@/api/types'
+import { usePreferences } from '@/preferences/PreferencesContext'
 
 interface TableGridProps {
   tables: TableOut[]
@@ -22,14 +23,15 @@ const item: Variants = {
 }
 
 export function TableGrid({ tables, bookings, onTableClick }: TableGridProps) {
+  const { t } = usePreferences()
   const activeTables = tables.filter((t) => t.is_active)
 
   if (activeTables.length === 0) {
     return (
       <div className="rounded-lg border border-dashed border-border bg-surface px-6 py-16 text-center">
         <Armchair className="mx-auto mb-4 h-7 w-7 text-muted" aria-hidden="true" />
-        <h3 className="font-display text-2xl text-text">No tables available</h3>
-        <p className="mt-2 text-sm text-dim">The club has not added any tables yet. Check back soon.</p>
+        <h3 className="font-display text-2xl text-text">{t('No tables available')}</h3>
+        <p className="mt-2 text-sm text-dim">{t('The club has not added any tables yet. Check back soon.')}</p>
       </div>
     )
   }

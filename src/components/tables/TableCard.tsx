@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { cn } from '@/lib/cn'
 import type { BookingOut, TableOut } from '@/api/types'
 import { clubHours, timeStrToHour } from '@/lib/dates'
+import { usePreferences } from '@/preferences/PreferencesContext'
 
 interface TableCardProps {
   table: TableOut
@@ -12,6 +13,7 @@ interface TableCardProps {
 }
 
 export function TableCard({ table, bookings = [], onClick, compact = false }: TableCardProps) {
+  const { t } = usePreferences()
   const tableBookings = bookings.filter(booking => booking.table_id === table.id)
   const total = clubHours().length
   const booked = Math.min(total, tableBookings.reduce((sum, booking) => sum + timeStrToHour(booking.end_time) - timeStrToHour(booking.start_time), 0))
@@ -24,11 +26,11 @@ export function TableCard({ table, bookings = [], onClick, compact = false }: Ta
       onClick={onClick}
       disabled={!table.is_active || !onClick}
       className={cn('group flex h-full w-full flex-col rounded-lg border border-border bg-surface text-left transition-colors hover:border-gold/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-4 focus-visible:ring-offset-bg disabled:cursor-default disabled:opacity-50', compact ? 'p-4' : 'p-5 sm:p-6')}
-      aria-label={`${table.name}, ${isFull ? 'fully booked' : `${total - booked} hours available`}. View times.`}
+      aria-label={t('{name}. {availability}. View times.', { name: table.name, availability: t(!table.is_active ? 'Unavailable' : isFull ? 'Fully booked' : 'Available hours: {count}', { count: total - booked }) })}
     >
       <div className="mb-5 flex w-full items-center justify-between gap-3">
-        <span className="label">Table {String(table.id).padStart(2, '0')}</span>
-        <span className={isFull ? 'badge-full' : 'badge-open'}>{!table.is_active ? 'Unavailable' : isFull ? 'Fully booked' : 'Available'}</span>
+        <span className="label">{t('Table {number}', { number: String(table.id).padStart(2, '0') })}</span>
+        <span className={isFull ? 'badge-full' : 'badge-open'}>{t(!table.is_active ? 'Unavailable' : isFull ? 'Fully booked' : 'Available')}</span>
       </div>
 
       {!compact && (
@@ -46,7 +48,7 @@ export function TableCard({ table, bookings = [], onClick, compact = false }: Ta
       )}
 
       <h3 className={cn('font-display leading-tight text-text', compact ? 'text-2xl' : 'text-[28px]')}>{table.name}</h3>
-      <p className="mt-2 text-xs text-dim">{isFull ? 'Check the schedule for details' : `${total - booked} ${total - booked === 1 ? 'hour' : 'hours'} available on this date`}</p>
+      <p className="mt-2 text-xs text-dim">{isFull ? t('Check the schedule for details') : t('Available hours: {count}', { count: total - booked })}</p>
 
       {!compact && (
         <div className="mt-5 flex w-full gap-1" aria-hidden="true">
@@ -57,7 +59,7 @@ export function TableCard({ table, bookings = [], onClick, compact = false }: Ta
         </div>
       )}
       <div className="mt-5 flex w-full items-center justify-between border-t border-border pt-4 text-xs font-semibold text-gold">
-        <span>View times</span>
+        <span>{t('View times')}</span>
         <ArrowUpRight className="h-4 w-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
       </div>
     </motion.button>

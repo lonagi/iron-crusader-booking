@@ -18,7 +18,6 @@ export default defineConfig({
           query: ['@tanstack/react-query'],
           motion: ['framer-motion'],
           dnd: ['@dnd-kit/core', '@dnd-kit/modifiers', '@dnd-kit/sortable', '@dnd-kit/utilities'],
-          emoji: ['emoji-picker-react'],
           radix: [
             '@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu',
             '@radix-ui/react-label', '@radix-ui/react-popover',

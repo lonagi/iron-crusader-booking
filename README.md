@@ -2,6 +2,18 @@
 
 Table booking for the Iron Crusader Warhammer club. A React and TypeScript frontend using Vite, Tailwind CSS, React Router and TanStack Query.
 
+## Appearance and languages
+
+The site starts in dark mode with a red accent. Theme and language controls are available before sign-in and in the main header. The selected theme persists between visits. English, Russian, Romanian and Ukrainian are supported throughout the interface, including dates and admin screens. The first visit uses the first supported language in the browser's preference list, falling back to English; a manual choice is saved.
+
+The club image is served from `public/club-logo.jpg` and is also used as the favicon.
+
+## 3D Beta
+
+The `#/beta` route offers an optional Three.js room. Drag or swipe to rotate, use the wheel or pinch gesture to zoom, and click a table to open the regular booking dialog. Arrow keys rotate the focused scene, `+` and `-` zoom, and `R` resets it. The adjacent table list provides keyboard access and remains usable when WebGL is unavailable.
+
+The room uses an experimental arrangement, not a measured model of the venue. Tables, availability and booking mutations use the same API and query cache as the main interface. The 3D bundle loads only when this route is opened, and the scene renders on interaction rather than running an idle animation loop.
+
 ## Run locally
 
 ```sh
@@ -88,7 +100,7 @@ npm run preview
 
 GitHub Pages uses the workflow in `.github/workflows/deploy.yml`. Configure the API address and bot username in repository secrets, then deploy from `main`. The Vite base path is `/iron-crusader-booking/`; update it when hosting under another path.
 
-## Auth checks
+## Checks
 
 Run with the same Node 20 or newer used for the build:
 
@@ -96,10 +108,12 @@ Run with the same Node 20 or newer used for the build:
 npm test
 ```
 
-The tests cover signed callback parsing, URL cleanup, stale and malformed callbacks, HashRouter routing, token expiry, corrupt stored sessions and unavailable browser storage. A real end-to-end Telegram login still needs the configured bot domain and a reachable backend; local tests do not verify that external setup.
+The tests cover signed callback parsing, URL cleanup, stale and malformed callbacks, HashRouter routing, token expiry, corrupt stored sessions, unavailable browser storage, browser language detection, theme defaults and translation completeness. A real end-to-end Telegram login still needs the configured bot domain and a reachable backend; local tests do not verify that external setup.
 
 ## Local interface preview
 
 With the development server running, open `/iron-crusader-booking/tests/ui-fixture.html#/book` to review the interface with sample tables and bookings. The fixture intercepts API requests locally and does not contact the club backend. It is not included in the production build. Use `?error=1#/book` to inspect a connection failure, `?empty=1#/my` for an empty account, or `?role=member#/book` for a non-admin view. These parameters go after `ui-fixture.html`.
 
-The fixture temporarily installs a sample session on the local preview origin and restores the previous session when you leave the page. Avoid opening real and fixture pages on that same local origin at the same time.
+The sample session stays in the fixture document and does not overwrite the application's saved session. Theme and language preferences are shared with the normal local preview.
+
+Open `/iron-crusader-booking/tests/ui-fixture.html#/beta` for a sample 3D room, or add `?no-webgl=1#/beta` after the fixture filename to test the fallback. Fixture changes are in memory and reset on reload; no sample tables or bookings are sent to the live API.

@@ -1,16 +1,19 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="referrer" content="no-referrer" />
-    <link rel="icon" type="image/svg+xml" href="/iron-crusader-booking/favicon.svg" />
+    <link rel="icon" type="image/jpeg" href="/iron-crusader-booking/club-logo.jpg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Book a table for your next game at Iron Crusader Warhammer Club." />
-    <meta name="theme-color" content="#244b3c" />
+    <meta name="theme-color" content="#141314" />
+    <script>
+      try { document.documentElement.dataset.theme = localStorage.getItem('ic.theme.v1') === 'light' ? 'light' : 'dark' } catch {}
+    </script>
     <title>Iron Crusader | Table bookings</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Oswald:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Oswald:wght@400;500;600&family=Roboto+Condensed:wght@400;500;600;700&display=swap" rel="stylesheet" />
   </head>
   <body>
     <div id="root"></div>

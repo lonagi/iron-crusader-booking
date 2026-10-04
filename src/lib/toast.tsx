@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, CheckCircle, AlertTriangle, Info, AlertCircle } from 'lucide-react'
+import { usePreferences } from '@/preferences/PreferencesContext'
 
 type ToastType = 'success' | 'error' | 'warning' | 'info'
 
@@ -11,13 +12,14 @@ const ToastContext = createContext<ToastContextValue | null>(null)
 let _id = 0
 
 const config: Record<ToastType, { icon: React.ReactNode; color: string; bg: string; border: string }> = {
-  success: { icon: <CheckCircle className="w-4 h-4" />, color: '#3d6549', bg: '#fffefa', border: '#c2d0b9' },
-  error:   { icon: <AlertCircle className="w-4 h-4" />, color: '#a34436', bg: '#fffefa', border: '#e6c3b9' },
-  warning: { icon: <AlertTriangle className="w-4 h-4" />, color: '#866427', bg: '#fffefa', border: '#d9caa8' },
-  info:    { icon: <Info className="w-4 h-4" />, color: '#626d60', bg: '#fffefa', border: '#dadcd2' },
+  success: { icon: <CheckCircle className="w-4 h-4" />, color: 'rgb(var(--success))', bg: 'rgb(var(--surface))', border: 'rgb(var(--success-border))' },
+  error: { icon: <AlertCircle className="w-4 h-4" />, color: 'rgb(var(--danger))', bg: 'rgb(var(--surface))', border: 'rgb(var(--danger-border))' },
+  warning: { icon: <AlertTriangle className="w-4 h-4" />, color: 'rgb(var(--accent))', bg: 'rgb(var(--surface))', border: 'rgb(var(--accent-border))' },
+  info: { icon: <Info className="w-4 h-4" />, color: 'rgb(var(--muted))', bg: 'rgb(var(--surface))', border: 'rgb(var(--border))' },
 }
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
+  const { t: translate } = usePreferences()
   const [toasts, setToasts] = useState<Toast[]>([])
 
   const toast = useCallback((message: string, type: ToastType = 'info') => {
@@ -48,7 +50,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               >
                 <span style={{ color: c.color }} className="shrink-0 mt-0.5">{c.icon}</span>
                 <p className="text-sm text-text flex-1">{t.message}</p>
-                <button onClick={() => remove(t.id)} aria-label="Dismiss notification" className="shrink-0 text-muted hover:text-text transition-colors p-1">
+                <button onClick={() => remove(t.id)} aria-label={translate('Dismiss notification')} className="shrink-0 text-muted hover:text-text transition-colors p-1">
                   <X className="w-3.5 h-3.5" />
                 </button>
               </motion.div>

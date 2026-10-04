@@ -1,21 +1,19 @@
 import { Link } from 'react-router-dom'
+import { usePreferences } from '@/preferences/PreferencesContext'
 
 export function ClubMark({ className = '' }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 48 48" fill="none" aria-hidden="true" className={className}>
-      <path d="M24 3 43 11v16c0 9-19 18-19 18S5 36 5 27V11L24 3Z" stroke="currentColor" strokeWidth="1.6" />
-      <path d="m20 12 4 3 4-3v9h9l-3 4 3 4h-9v10l-4-3-4 3V29h-9l3-4-3-4h9V12Z" fill="currentColor" />
-    </svg>
-  )
+  const { t } = usePreferences()
+  return <img src={`${import.meta.env.BASE_URL}club-logo.jpg`} alt={t('Iron Crusader club image')} width="640" height="640" className={`rounded-md object-cover ${className}`} />
 }
 
 export function Brand({ inverse = false }: { inverse?: boolean }) {
+  const { t } = usePreferences()
   return (
-    <Link to="/book" aria-label="Iron Crusader home" className={`inline-flex items-center gap-3 ${inverse ? 'text-[#f5f3ed]' : 'text-gold'}`}>
-      <ClubMark className="h-11 w-11 shrink-0" />
-      <span>
+    <Link to="/book" aria-label={t('Iron Crusader home')} className={`inline-flex min-w-0 items-center gap-3 ${inverse ? 'text-[#f5ede1]' : 'text-text'}`}>
+      <ClubMark className="h-12 w-12 shrink-0 ring-1 ring-border" />
+      <span className="min-w-0">
         <span className="block font-display text-[21px] font-medium leading-none tracking-[.035em] uppercase">Iron Crusader</span>
-        <span className="block mt-1.5 text-[9px] font-semibold uppercase tracking-[.23em] opacity-75">Warhammer Club</span>
+        <span className="block mt-1.5 text-[9px] font-semibold uppercase tracking-[.16em] opacity-75">{t('Warhammer Club')}</span>
       </span>
     </Link>
   )
