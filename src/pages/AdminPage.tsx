@@ -1,47 +1,43 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import {
-  List, Wrench, Map, CalendarDays, Trash2, Download,
+  List, Wrench, CalendarDays, Trash2, Download,
   Plus, ChevronLeft, ChevronRight, RotateCw, Edit2, Check, X,
 } from 'lucide-react'
 import { usePreferences } from '@/preferences/PreferencesContext'
 import { cn } from '@/lib/cn'
 import {
   useAdminBookings, useAdminTables, useAdminCancelBooking,
-  useCreateTable, useUpdateTable, useBookingsByDate,
+  useCreateTable, useUpdateTable,
 } from '@/api/hooks'
 import { useToast } from '@/lib/toast'
 import { todayStr, tomorrowStr, maxBookingDate } from '@/lib/dates'
-import { FloorPlan } from '@/components/tables/FloorPlan'
 import { addDays, format, parseISO } from 'date-fns'
 import type { TableOut } from '@/api/types'
 
-type AdminTab = 'bookings' | 'tables' | 'floorplan'
+type AdminTab = 'bookings' | 'tables'
 
 export function AdminPage() {
   const { t } = usePreferences()
   const [tab, setTab] = useState<AdminTab>('bookings')
 
   return (
-    <div className="space-y-7">
-      <header className="border-b border-border pb-6">
-        <p className="label mb-2">{t('Club management')}</p>
-        <h1 className="font-display text-4xl tracking-tight text-text sm:text-5xl">{t('Admin')}</h1>
-        <p className="mt-3 text-sm text-dim">{t('Manage bookings, tables and the room layout.')}</p>
+    <div className="mx-auto max-w-5xl space-y-8 sm:space-y-10">
+      <header>
+        <h1 className="page-heading">{t('Admin')}</h1>
       </header>
-      <div className="flex w-fit max-w-full flex-wrap gap-1 rounded-lg border border-border bg-raised p-1" aria-label={t('Admin sections')}>
+      <div className="flex flex-wrap gap-2 border-b border-border pb-3" aria-label={t('Admin sections')}>
         {([
           { id: 'bookings', label: 'Bookings', icon: List },
           { id: 'tables', label: 'Tables', icon: Wrench },
-          { id: 'floorplan', label: 'Room layout', icon: Map },
         ] as const).map(({ id, label, icon: Icon }) => (
           <button
             key={id}
             onClick={() => setTab(id)}
             aria-pressed={tab === id}
             className={cn(
-              'flex min-h-10 items-center gap-2 rounded-md border px-3 text-xs font-semibold transition-colors sm:px-4 sm:text-sm',
-              tab === id ? 'border-border bg-surface text-gold' : 'border-transparent text-dim hover:text-text',
+              'flex min-h-12 items-center gap-2 rounded-lg px-5 text-base font-semibold transition-colors',
+              tab === id ? 'bg-gold-muted text-gold' : 'text-dim hover:bg-surface hover:text-text',
             )}
           >
             <Icon className="h-4 w-4" aria-hidden="true" />{t(label)}
@@ -50,7 +46,6 @@ export function AdminPage() {
       </div>
       {tab === 'bookings' && <BookingsTab />}
       {tab === 'tables' && <TablesTab />}
-      {tab === 'floorplan' && <FloorPlanTab />}
     </div>
   )
 }
@@ -59,7 +54,7 @@ function QueryError({ message, retry }: { message: string; retry: () => void }) 
   const { t } = usePreferences()
   return (
     <div className="card flex flex-wrap items-center justify-between gap-4 p-5" role="alert">
-      <p className="text-sm text-dim">{t(message)}</p>
+      <p className="text-base text-dim">{t(message)}</p>
       <button onClick={retry} className="btn btn-secondary">
         <RotateCw className="h-4 w-4" aria-hidden="true" />{t('Try again')}
       </button>
@@ -128,23 +123,23 @@ function BookingsTab() {
     total + (timeInMinutes(booking.end_time) - timeInMinutes(booking.start_time)) / 60, 0)
 
   return (
-    <div className="space-y-5">
-      <div className="card flex flex-wrap items-center gap-3 p-4">
-        <div className="flex gap-2">
+    <div className="space-y-8">
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap gap-2">
           {[{ label: 'Today', value: todayStr() }, { label: 'Tomorrow', value: tomorrowStr() }].map(day => (
             <button
               key={day.value}
               onClick={() => setDate(day.value)}
               aria-pressed={date === day.value}
-              className={cn('btn text-xs', date === day.value ? 'btn-primary' : 'btn-secondary')}
+              className={cn('btn', date === day.value ? 'btn-primary' : 'btn-secondary')}
             >{t(day.label)}</button>
           ))}
         </div>
-        <div className="flex items-center gap-2 sm:ml-auto">
+        <div className="flex w-full max-w-xs items-center gap-2 sm:ml-auto sm:w-auto">
           <button onClick={() => shiftDate(-1)} disabled={date <= todayStr()} className="btn-icon" aria-label={t('Previous date')}>
             <ChevronLeft className="h-4 w-4" aria-hidden="true" />
           </button>
-          <label className="flex min-h-10 items-center gap-2 rounded-md border border-border bg-bg px-3">
+          <label className="flex min-h-12 min-w-0 flex-1 items-center gap-2 rounded-lg border border-border bg-surface px-3">
             <CalendarDays className="h-4 w-4 shrink-0 text-muted" aria-hidden="true" />
             <input
               type="date" value={date} min={todayStr()} max={maxBookingDate()} aria-label={t('Booking date')} lang={locale}
@@ -152,7 +147,7 @@ function BookingsTab() {
                 const next = event.target.value
                 if (next && next >= todayStr() && next <= maxBookingDate()) setDate(next)
               }}
-              className="w-28 bg-transparent text-xs text-text outline-none"
+              className="min-w-0 w-full bg-transparent text-base text-text outline-none sm:w-36"
             />
           </label>
           <button onClick={() => shiftDate(1)} disabled={date >= maxBookingDate()} className="btn-icon" aria-label={t('Next date')}>
@@ -162,53 +157,53 @@ function BookingsTab() {
         <button onClick={() => refetch()} disabled={isFetching} className="btn-icon" aria-label={t('Refresh bookings')}>
           <RotateCw className={cn('h-4 w-4', isFetching && 'animate-spin')} aria-hidden="true" />
         </button>
-        <button onClick={exportCsv} disabled={bookings.length === 0 || isError} className="btn btn-secondary text-xs">
+        <button onClick={exportCsv} disabled={bookings.length === 0 || isError} className="btn btn-secondary">
           <Download className="h-4 w-4" aria-hidden="true" />{t('Export CSV')}
         </button>
       </div>
 
       {!isError && (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-4">
           {[
             { label: 'Bookings', value: bookings.length },
             { label: 'Tables booked', value: new Set(bookings.map(booking => booking.table_id)).size },
             { label: 'Hours booked', value: Math.round(totalHours * 10) / 10 },
             { label: 'Players', value: new Set(bookings.map(booking => booking.user_id)).size },
           ].map(stat => (
-            <div key={stat.label} className="border-l-2 border-gold-border py-1 pl-4">
-              <div className="font-display text-3xl text-text">{isLoading ? '...' : stat.value.toLocaleString(locale)}</div>
-              <div className="mt-1 text-xs text-dim">{t(stat.label)}</div>
+            <div key={stat.label}>
+              <div className="text-3xl font-semibold tabular-nums text-text">{isLoading ? <span className="inline-block h-8 w-12 animate-pulse rounded bg-raised" aria-label={t('Loading')} /> : stat.value.toLocaleString(locale)}</div>
+              <div className="mt-2 text-sm text-dim">{t(stat.label)}</div>
             </div>
           ))}
         </div>
       )}
 
-      <div className="space-y-3">
-        <h2 className="text-sm font-semibold text-text">{formatDate(date)}</h2>
+      <div className="space-y-4">
+        <h2 className="text-lg font-semibold text-text">{formatDate(date)}</h2>
         {isLoading && <LoadingRows />}
         {isError && <QueryError message="Could not load bookings for this date." retry={() => refetch()} />}
         {!isLoading && !isError && bookings.length === 0 && (
           <div className="card px-6 py-10 text-center">
             <h3 className="font-medium text-text">{t('No bookings for this date')}</h3>
-            <p className="mt-2 text-sm text-dim">{t('Choose another date to see the schedule.')}</p>
+            <p className="mt-2 text-base text-dim">{t('Choose another date to see the schedule.')}</p>
           </div>
         )}
         {bookings.map(booking => {
           const tableName = tableMap[booking.table_id]?.name ?? t('Table {number}', { number: booking.table_id })
           return (
-            <div key={booking.id} className="card flex flex-wrap items-center justify-between gap-4 p-5">
+            <div key={booking.id} className="card flex flex-wrap items-center justify-between gap-5 p-5 sm:p-6">
               <div className="min-w-0">
-                <h3 className="break-words text-sm font-semibold text-text">{tableName}</h3>
-                <p className="mt-1 text-sm text-dim">{booking.user_name || t('Player')}</p>
+                <h3 className="break-words text-base font-semibold text-text">{tableName}</h3>
+                <p className="mt-2 text-sm text-dim">{booking.user_name || t('Player')}</p>
               </div>
-              <div className="flex flex-wrap items-center gap-4 sm:gap-6">
-                <p className="text-sm tabular-nums text-gold">{t('{start} to {end}', { start: booking.start_time.slice(0, 5), end: booking.end_time.slice(0, 5) })}</p>
+              <div className="flex w-full flex-wrap items-center justify-between gap-4 sm:w-auto sm:gap-6">
+                <p className="text-base tabular-nums text-text">{t('{start} to {end}', { start: booking.start_time.slice(0, 5), end: booking.end_time.slice(0, 5) })}</p>
                 <button
                   onClick={() => handleCancel(booking.id)} disabled={cancelBooking.isPending}
                   aria-label={t('Cancel {player} booking for {table} at {time}', { player: booking.user_name || t('Player'), table: tableName, time: booking.start_time.slice(0, 5) })}
-                  className="btn btn-danger text-xs"
+                  className="btn btn-danger"
                 >
-                  <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                  <Trash2 className="h-4 w-4" aria-hidden="true" />
                   {t(cancelBooking.isPending && cancelBooking.variables === booking.id ? 'Cancelling' : 'Cancel')}
                 </button>
               </div>
@@ -243,17 +238,17 @@ function TablesTab() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <form className="card p-5 sm:p-6" onSubmit={event => { event.preventDefault(); void handleCreate() }}>
-        <h2 className="text-base font-semibold text-text">{t('Add a table')}</h2>
-        <p className="mt-1 text-sm text-dim">{t('Give it a name players can find in the club.')}</p>
+        <h2 className="text-lg font-semibold text-text">{t('Add a table')}</h2>
+        <p className="mt-2 text-base text-dim">{t('Give it a name players can find in the club.')}</p>
         <div className="mt-5 flex flex-wrap items-end gap-3">
           <div className="relative">
-            <span className="mb-2 block text-xs font-medium text-dim">{t('Icon')}</span>
+            <span className="mb-2 block text-sm font-medium text-dim">{t('Icon')}</span>
             <button
               type="button" onClick={() => setShowEmojiPicker(previous => !previous)}
               aria-label={t('Choose table icon')} aria-expanded={showEmojiPicker}
-              className="flex h-11 w-11 items-center justify-center rounded-md border border-border bg-raised text-xl hover:border-border-strong"
+              className="flex h-12 w-12 items-center justify-center rounded-lg border border-border bg-raised text-xl hover:border-border-strong"
             >{newEmoji}</button>
             {showEmojiPicker && (
               <div className="absolute left-0 top-full z-50 mt-2">
@@ -262,24 +257,24 @@ function TablesTab() {
             )}
           </div>
           <label className="min-w-36 flex-1">
-            <span className="mb-2 block text-xs font-medium text-dim">{t('Table name')}</span>
-            <input value={newName} onChange={event => setNewName(event.target.value)} placeholder={t('For example, Table 1')} className="input h-11" required />
+            <span className="mb-2 block text-sm font-medium text-dim">{t('Table name')}</span>
+            <input value={newName} onChange={event => setNewName(event.target.value)} placeholder={t('For example, Table 1')} className="input" required />
           </label>
-          <button type="submit" disabled={!newName.trim() || createTable.isPending} className="btn btn-primary min-h-11">
+          <button type="submit" disabled={!newName.trim() || createTable.isPending} className="btn btn-primary w-full sm:w-auto">
             <Plus className="h-4 w-4" aria-hidden="true" />{t(createTable.isPending ? 'Adding' : 'Add table')}
           </button>
         </div>
       </form>
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-sm font-semibold text-text">{t('Tables')} {tables.length > 0 && <span className="ml-1 font-normal text-muted">({tables.length.toLocaleString(locale)})</span>}</h2>
+        <h2 className="text-lg font-semibold text-text">{t('Tables')} {tables.length > 0 && <span className="ml-1 font-normal text-muted">({tables.length.toLocaleString(locale)})</span>}</h2>
         <button onClick={() => refetch()} disabled={isFetching} className="btn-icon" aria-label={t('Refresh tables')}>
           <RotateCw className={cn('h-4 w-4', isFetching && 'animate-spin')} aria-hidden="true" />
         </button>
       </div>
       {isLoading && <LoadingRows />}
       {isError && <QueryError message="Could not load the tables." retry={() => refetch()} />}
-      {!isLoading && !isError && tables.length === 0 && <p className="card p-7 text-sm text-dim">{t('No tables yet. Add your first table above to open it for bookings.')}</p>}
-      <div className="space-y-3">
+      {!isLoading && !isError && tables.length === 0 && <p className="card p-7 text-base text-dim">{t('No tables yet. Add your first table above to open it for bookings.')}</p>}
+      <div className="space-y-4">
         {tables.map(table => <TableRow key={table.id} table={table} />)}
       </div>
     </div>
@@ -317,14 +312,14 @@ function TableRow({ table }: { table: TableOut }) {
   }
 
   return (
-    <motion.div layout className="card flex flex-wrap items-center justify-between gap-4 p-5">
+    <motion.div layout className="card flex flex-wrap items-center justify-between gap-5 p-5 sm:p-6">
       <div className="min-w-0 flex-1 basis-48">
         {editing ? (
           <div className="flex items-center gap-3">
             <div className="relative shrink-0">
               <button
                 onClick={() => setShowPicker(previous => !previous)} aria-label={t('Choose icon for {table}', { table: table.name })} aria-expanded={showPicker}
-                className="flex h-10 w-10 items-center justify-center rounded-md border border-border bg-raised text-xl hover:border-border-strong"
+                className="flex h-12 w-12 items-center justify-center rounded-lg border border-border bg-raised text-xl hover:border-border-strong"
               >{emoji}</button>
               {showPicker && (
                 <div className="absolute left-0 top-full z-50 mt-2">
@@ -340,12 +335,12 @@ function TableRow({ table }: { table: TableOut }) {
           </div>
         ) : (
           <div>
-            <h3 className="break-words text-sm font-semibold text-text">{table.name}</h3>
-            <p className="mt-1 text-xs text-dim">{t(table.is_active ? 'Open for bookings' : 'Closed for bookings')}</p>
+            <h3 className="break-words text-base font-semibold text-text">{table.name}</h3>
+            <p className="mt-2 text-sm text-dim">{t(table.is_active ? 'Open for bookings' : 'Closed for bookings')}</p>
           </div>
         )}
       </div>
-      <div className="flex shrink-0 items-center gap-2">
+      <div className="flex max-w-full flex-wrap items-center gap-2">
         {editing ? (
           <>
             <button onClick={handleSave} disabled={updateTable.isPending || !name.trim()} className="btn-icon" aria-label={t('Save table')}>
@@ -361,37 +356,11 @@ function TableRow({ table }: { table: TableOut }) {
             <Edit2 className="h-4 w-4" aria-hidden="true" />
           </button>
         )}
-        <button onClick={toggleActive} disabled={updateTable.isPending} className="btn btn-secondary text-xs">
+        <button onClick={toggleActive} disabled={updateTable.isPending} className="btn btn-secondary">
           {t(table.is_active ? 'Close table' : 'Open table')}
         </button>
       </div>
     </motion.div>
-  )
-}
-
-function FloorPlanTab() {
-  const { t } = usePreferences()
-  const tablesQuery = useAdminTables()
-  const bookingsQuery = useBookingsByDate(todayStr())
-  const toast = useToast()
-
-  if (tablesQuery.isLoading || bookingsQuery.isLoading) return <LoadingRows />
-  if (tablesQuery.isError || bookingsQuery.isError) {
-    return <QueryError message="Could not load the room layout." retry={() => { void tablesQuery.refetch(); void bookingsQuery.refetch() }} />
-  }
-
-  return (
-    <div className="space-y-4">
-      <div>
-        <h2 className="text-base font-semibold text-text">{t('Room layout')}</h2>
-        <p className="mt-1 text-sm text-dim">{t('Move each table to match its position in the club, then save the layout.')}</p>
-      </div>
-      {tablesQuery.data?.length === 0 ? (
-        <p className="card p-7 text-sm text-dim">{t('Add a table in the Tables section to start arranging the room.')}</p>
-      ) : (
-        <FloorPlan tables={tablesQuery.data ?? []} bookings={bookingsQuery.data ?? []} editable onPositionsSaved={() => toast(t('Layout saved'), 'success')} />
-      )}
-    </div>
   )
 }
 
@@ -408,7 +377,7 @@ function TableIconPicker({ selected, onSelect }: { selected: string; onSelect: (
         <button
           key={label} type="button" aria-label={t(label)} title={t(label)} aria-pressed={selected === emoji}
           onClick={() => onSelect(emoji)}
-          className={cn('flex h-10 w-10 items-center justify-center rounded-md border text-xl transition-colors', selected === emoji ? 'border-gold bg-gold-dim' : 'border-transparent hover:border-border hover:bg-raised')}
+          className={cn('flex h-11 w-11 items-center justify-center rounded-md border text-xl transition-colors', selected === emoji ? 'border-gold bg-gold-dim' : 'border-transparent hover:border-border hover:bg-raised')}
         >{emoji}</button>
       ))}
     </div>

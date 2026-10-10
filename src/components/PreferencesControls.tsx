@@ -9,9 +9,9 @@ export function PreferencesControls() {
   const themeLabel = t(theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme')
   return (
     <div className="flex items-center gap-2">
-      <label className="relative flex h-[42px] items-center gap-2 rounded-md border border-border bg-surface px-2.5 text-dim">
+      <label className="relative flex h-12 items-center gap-2 rounded-md border border-border bg-surface px-3 text-dim">
         <Globe2 className="h-4 w-4 shrink-0" aria-hidden="true" />
-        <select aria-label={t('Language')} value={language} onChange={event => setLanguage(event.target.value as Language)} className="max-w-[105px] cursor-pointer bg-transparent py-2 text-xs font-semibold outline-none focus-visible:ring-2 focus-visible:ring-gold">
+        <select aria-label={t('Language')} value={language} onChange={event => setLanguage(event.target.value as Language)} className="max-w-[130px] cursor-pointer bg-transparent py-2 text-base font-medium outline-none focus-visible:ring-2 focus-visible:ring-gold">
           {LANGUAGES.map(value => <option key={value} value={value} lang={value}>{names[value]}</option>)}
         </select>
       </label>

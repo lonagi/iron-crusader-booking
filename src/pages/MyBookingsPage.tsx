@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowRight, CalendarDays, Clock, RefreshCw, Trash2 } from 'lucide-react'
-import { parseISO } from 'date-fns'
 import { useMyBookings, useTables, useCancelBooking } from '@/api/hooks'
 import { useToast } from '@/lib/toast'
 import { usePreferences } from '@/preferences/PreferencesContext'
@@ -39,12 +38,11 @@ export function MyBookingsPage() {
   }
 
   return (
-    <div className="max-w-4xl space-y-7">
-      <header className="flex flex-wrap items-end justify-between gap-4 border-b border-border pb-6">
+    <div className="mx-auto max-w-5xl space-y-8 sm:space-y-10">
+      <header className="flex flex-wrap items-end justify-between gap-5">
         <div>
-          <p className="label mb-2">{t('Your visits')}</p>
-          <h1 className="font-display text-4xl tracking-tight text-text sm:text-5xl">{t('My bookings')}</h1>
-          <p className="mt-3 text-sm text-dim">{t('View or cancel your table bookings.')}</p>
+          <h1 className="page-heading">{t('My bookings')}</h1>
+          <p className="mt-3 text-base leading-relaxed text-dim">{t('View or cancel your table bookings.')}</p>
         </div>
         {bookings.length > 0 && (
           <Link to="/book" className="btn btn-secondary">
@@ -65,7 +63,7 @@ export function MyBookingsPage() {
         <div className="card flex flex-wrap items-center justify-between gap-4 p-6" role="alert">
           <div>
             <h2 className="font-semibold text-text">{t('Could not load your bookings')}</h2>
-            <p className="mt-1 text-sm text-dim">{t('Check your connection and try again.')}</p>
+            <p className="mt-2 text-base text-dim">{t('Check your connection and try again.')}</p>
           </div>
           <button onClick={() => refetch()} className="btn btn-secondary">
             <RefreshCw className="h-4 w-4" aria-hidden="true" /> {t('Try again')}
@@ -76,19 +74,18 @@ export function MyBookingsPage() {
       {!isLoading && !isError && bookings.length === 0 && (
         <div className="card px-6 py-12 text-center sm:py-16">
           <CalendarDays className="mx-auto mb-5 h-8 w-8 text-gold" aria-hidden="true" strokeWidth={1.5} />
-          <h2 className="font-display text-2xl text-text">{t('No plans yet')}</h2>
-          <p className="mx-auto mt-2 max-w-xs text-sm leading-relaxed text-dim">{t('Choose a table and a time for your next game.')}</p>
+          <h2 className="text-2xl font-semibold text-text">{t('No plans yet')}</h2>
+          <p className="mx-auto mt-3 max-w-sm text-base leading-relaxed text-dim">{t('Choose a table and a time for your next game.')}</p>
           <Link to="/book" className="btn btn-primary mt-6">
             {t('Book a table')} <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </Link>
         </div>
       )}
 
-      <div className="space-y-3">
+      <div className="space-y-4">
         <AnimatePresence mode="popLayout">
           {sortedBookings.map(booking => {
             const tableName = tableMap[booking.table_id]?.name ?? t('Table {number}', { number: booking.table_id })
-            const date = parseISO(booking.date)
             return (
               <motion.article
                 key={booking.id}
@@ -97,30 +94,26 @@ export function MyBookingsPage() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, x: -12 }}
                 transition={{ duration: 0.2 }}
-                className="card flex flex-wrap items-center gap-4 p-5 sm:gap-5 sm:p-6"
+                className="card flex flex-wrap items-center gap-5 p-5 sm:gap-8 sm:p-7"
               >
-                <div className="w-14 shrink-0 border-r border-border pr-4 text-center sm:w-16" aria-hidden="true">
-                  <div className="text-[10px] font-semibold uppercase tracking-widest text-muted">{date.toLocaleDateString(locale, { month: 'short' })}</div>
-                  <div className="font-display text-3xl leading-tight text-gold">{date.toLocaleDateString(locale, { day: '2-digit' })}</div>
-                </div>
-                <div className="min-w-0 flex-1 basis-36">
-                  <h2 className="break-words text-base font-semibold text-text">{tableName}</h2>
-                  <p className="mt-1 text-sm text-dim">{formatDate(booking.date)}</p>
-                  <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-dim">
-                    <span className="inline-flex items-center gap-1.5">
-                      <Clock className="h-3.5 w-3.5" aria-hidden="true" />
+                <div className="min-w-0 flex-1 basis-52">
+                  <h2 className="break-words text-lg font-semibold text-text">{tableName}</h2>
+                  <p className="mt-2 text-sm text-dim">{formatDate(booking.date)}</p>
+                  <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-base text-text">
+                    <span className="inline-flex items-center gap-2 tabular-nums">
+                      <Clock className="h-4 w-4 text-muted" aria-hidden="true" />
                       {t('{start} to {end}', { start: booking.start_time.slice(0, 5), end: booking.end_time.slice(0, 5) })}
                     </span>
-                    <span className="text-muted">{durationLabel(booking.start_time, booking.end_time, locale)}</span>
+                    <span className="text-sm text-muted">{durationLabel(booking.start_time, booking.end_time, locale)}</span>
                   </div>
                 </div>
                 <button
                   onClick={() => handleCancel(booking.id)}
                   disabled={cancelBooking.isPending}
                   aria-label={t('Cancel {table} booking on {date} at {time}', { table: tableName, date: formatDate(booking.date), time: booking.start_time.slice(0, 5) })}
-                  className="btn btn-danger ml-auto text-xs"
+                  className="btn btn-danger w-full sm:ml-auto sm:w-auto"
                 >
-                  <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                  <Trash2 className="h-4 w-4" aria-hidden="true" />
                   {t(cancelBooking.isPending && cancelBooking.variables === booking.id ? 'Cancelling' : 'Cancel')}
                 </button>
               </motion.article>

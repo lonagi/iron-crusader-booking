@@ -13,7 +13,7 @@ export function Brand({ inverse = false }: { inverse?: boolean }) {
       <ClubMark className="h-12 w-12 shrink-0 ring-1 ring-border" />
       <span className="min-w-0">
         <span className="block font-display text-[21px] font-medium leading-none tracking-[.035em] uppercase">Iron Crusader</span>
-        <span className="block mt-1.5 text-[9px] font-semibold uppercase tracking-[.16em] opacity-75">{t('Warhammer Club')}</span>
+        <span className="block mt-1.5 text-xs font-medium opacity-75">{t('Warhammer Club')}</span>
       </span>
     </Link>
   )

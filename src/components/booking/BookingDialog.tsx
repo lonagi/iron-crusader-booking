@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
-import { AlertCircle, ArrowRight, Check, Clock3, Trash2, X } from 'lucide-react'
+import { AlertCircle, ArrowRight, ChevronDown, Clock3, Trash2, X } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { clubHours, hourToTimeStr, timeStrToHour } from '@/lib/dates'
 import { usePreferences } from '@/preferences/PreferencesContext'
@@ -93,32 +93,31 @@ export function BookingDialog({ table, date, bookings, onClose, onRefresh }: Boo
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm" />
         <Dialog.Content
-          className="fixed left-1/2 top-1/2 z-50 max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-xl border border-border bg-surface shadow-modal focus:outline-none"
+          className="fixed inset-x-0 bottom-0 z-50 flex max-h-[92dvh] flex-col overflow-hidden rounded-t-3xl bg-surface shadow-modal focus:outline-none sm:inset-x-auto sm:bottom-auto sm:left-1/2 sm:top-1/2 sm:max-h-[calc(100dvh-3rem)] sm:w-[calc(100%-3rem)] sm:max-w-xl sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl"
           onCloseAutoFocus={event => {
             event.preventDefault()
             previousFocus.current?.focus()
           }}
         >
-          <div className="flex items-start justify-between gap-4 border-b border-border p-5 sm:p-7">
-            <div>
-              <p className="label mb-2">{t('Reserve a table')}</p>
-              <Dialog.Title className="font-display text-3xl leading-tight text-text">{table.name}</Dialog.Title>
-              <Dialog.Description className="mt-2 text-sm text-dim">{formatDate(date)}</Dialog.Description>
+          <div className="flex shrink-0 items-start justify-between gap-3 px-5 pb-5 pt-6 sm:px-8 sm:pt-8">
+            <div className="min-w-0">
+              <Dialog.Title className="break-words text-2xl font-semibold leading-snug tracking-tight text-text">{table.name}</Dialog.Title>
+              <Dialog.Description className="mt-2 text-base leading-relaxed text-dim">{formatDate(date)}</Dialog.Description>
             </div>
             <Dialog.Close className="btn-icon shrink-0" aria-label={t('Close booking window')}>
               <X className="h-4 w-4" />
             </Dialog.Close>
           </div>
 
-          <div className="p-5 sm:p-7">
-            <div className="mb-5">
-              <h3 className="text-sm font-semibold text-text">{t('Choose your hours')}</h3>
-              <p id="hour-selection-help" className="mt-1 text-xs leading-relaxed text-dim">
-                {t(hasFreeHours ? 'Pick the first and last hour of your visit, or use the time fields.' : 'This table is fully booked. Try another table or date.')}
+          <div className="min-h-0 overflow-y-auto overscroll-contain px-5 pb-6 sm:px-8">
+            <div className="mb-4">
+              <h3 className="text-lg font-semibold text-text">{t('Choose your hours')}</h3>
+              <p id="hour-selection-help" className="mt-1 text-base leading-relaxed text-dim">
+                {t(hasFreeHours ? 'Each button is one hour. Tap the first and last hour of your visit.' : 'This table is fully booked. Try another table or date.')}
               </p>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4" role="group" aria-label={t('Hourly availability')} aria-describedby="hour-selection-help">
+            <div className="grid grid-cols-4 gap-2" role="group" aria-label={t('Hourly availability')} aria-describedby="hour-selection-help">
               {hours.map(hour => {
                 const booking = hourMap[hour]
                 const own = booking?.user_id === session?.user_id
@@ -132,98 +131,107 @@ export function BookingDialog({ table, date, bookings, onClose, onRefresh }: Boo
                     aria-label={t('{start} to {end}, {status}', { start: timeLabel(hour), end: timeLabel(hour + 1), status: t(own ? 'Your booking' : booking ? 'Booked' : 'Available') })}
                     onClick={() => selectHour(hour)}
                     className={cn(
-                      'relative rounded-md border px-2 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2',
-                      selected ? 'border-gold bg-gold text-on-accent' : booking ? own ? 'border-gold-border bg-gold-muted text-gold' : 'border-border bg-raised text-muted' : 'border-border bg-surface text-text hover:border-gold hover:bg-gold-muted',
+                      'min-h-14 rounded-xl border px-1 py-3 text-center text-base font-semibold tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 focus-visible:ring-offset-surface',
+                      selected ? 'border-gold bg-gold text-on-accent' : booking ? own ? 'border-gold-border bg-gold-muted text-gold' : 'border-transparent bg-transparent text-muted line-through decoration-1' : 'border-transparent bg-raised text-text hover:border-gold hover:bg-gold-muted',
                       booking && 'cursor-default',
                     )}
                   >
-                    <span className="block text-sm font-semibold tabular-nums">{timeLabel(hour)}</span>
-                    <span className={cn('mt-1 block text-[10px]', selected ? 'text-on-accent/80' : 'text-current')}>
-                      {selected ? t('Selected') : own ? t('Your booking') : booking ? t('Booked') : t('Until {time}', { time: timeLabel(hour + 1) })}
-                    </span>
-                    {selected && <Check className="absolute right-2 top-3 h-3 w-3" aria-hidden="true" />}
+                    {timeLabel(hour)}
                   </button>
                 )
               })}
             </div>
 
-            {hasFreeHours && (
-              <div className="mt-5 grid grid-cols-2 items-end gap-3 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
-                <label className="block min-w-0 text-xs font-medium text-dim">
-                  {t('Start time')}
-                  <select
-                    className="input mt-2 min-h-11 min-w-0"
-                    value={selection?.[0] ?? ''}
-                    disabled={createBooking.isPending}
-                    onChange={event => {
-                      const hour = Number(event.target.value)
-                      setSelection([hour, hour])
-                      setAnchor(null)
-                    }}
-                  >
-                    <option value="" disabled>{t('Select time')}</option>
-                    {hours.filter(hour => !hourMap[hour]).map(hour => <option key={hour} value={hour}>{timeLabel(hour)}</option>)}
-                  </select>
-                </label>
-                <ArrowRight className="mb-3 hidden h-4 w-4 text-muted sm:block" aria-hidden="true" />
-                <label className="block min-w-0 text-xs font-medium text-dim">
-                  {t('End time')}
-                  <select
-                    className="input mt-2 min-h-11 min-w-0"
-                    value={selection ? selection[1] + 1 : ''}
-                    disabled={!selection || createBooking.isPending}
-                    onChange={event => {
-                      if (selection) setSelection([selection[0], Number(event.target.value) - 1])
-                      setAnchor(null)
-                    }}
-                  >
-                    <option value="" disabled>{t('Select time')}</option>
-                    {hours.map(hour => hour + 1).filter(hour => selection && hour > selection[0]).map(hour => (
-                      <option key={hour} value={hour}>{timeLabel(hour)}</option>
-                    ))}
-                  </select>
-                </label>
+            {tableBookings.length > 0 && (
+              <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-muted" aria-hidden="true">
+                <span className="line-through">{t('Booked')}</span>
+                {ownBookings.length > 0 && <span className="text-gold">{t('Your booking')}</span>}
               </div>
             )}
 
-            <div className="mt-6 border-t border-border pt-5">
-              <div className="mb-4 min-h-6" role="status" aria-live="polite">
-                {overlaps ? (
-                  <p className="flex items-start gap-2 text-sm text-red"><AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />{t('Part of this time is already booked. Choose a free stretch.')}</p>
-                ) : validRange ? (
-                  <p className="flex items-center gap-2 text-sm text-text">
-                    <Clock3 className="h-4 w-4 text-gold" />
-                    <span className="font-semibold tabular-nums">{t('{start} to {end}', { start: timeLabel(validRange[0]), end: timeLabel(validRange[1]) })}</span>
-                    <span className="ml-auto text-dim">{t('Hours: {count}', { count: validRange[1] - validRange[0] })}</span>
-                  </p>
-                ) : <p className="text-sm text-dim">{t(hasFreeHours ? 'Select a time to continue.' : 'No free hours on this date.')}</p>}
-              </div>
-              <button onClick={handleBook} disabled={!validRange || createBooking.isPending} className="btn-primary min-h-11 w-full justify-center">
-                {t(createBooking.isPending ? 'Confirming booking' : 'Confirm booking')}
-                {!createBooking.isPending && <ArrowRight className="h-4 w-4" />}
-              </button>
-            </div>
+            {hasFreeHours && (
+              <details className="group mt-4">
+                <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-lg text-base font-medium text-dim focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold [&::-webkit-details-marker]:hidden">
+                  {t('Set exact times')}
+                  <ChevronDown className="h-4 w-4 shrink-0 transition-transform group-open:rotate-180" aria-hidden="true" />
+                </summary>
+                <div className="grid grid-cols-2 gap-3 pb-1 pt-3">
+                  <label className="block min-w-0 text-sm font-medium text-dim">
+                    {t('Start time')}
+                    <select
+                      className="input mt-2 min-h-12 min-w-0 text-base"
+                      value={selection?.[0] ?? ''}
+                      disabled={createBooking.isPending}
+                      onChange={event => {
+                        const hour = Number(event.target.value)
+                        setSelection([hour, hour])
+                        setAnchor(null)
+                      }}
+                    >
+                      <option value="" disabled>{t('Select time')}</option>
+                      {hours.filter(hour => !hourMap[hour]).map(hour => <option key={hour} value={hour}>{timeLabel(hour)}</option>)}
+                    </select>
+                  </label>
+                  <label className="block min-w-0 text-sm font-medium text-dim">
+                    {t('End time')}
+                    <select
+                      className="input mt-2 min-h-12 min-w-0 text-base"
+                      value={selection ? selection[1] + 1 : ''}
+                      disabled={!selection || createBooking.isPending}
+                      onChange={event => {
+                        if (selection) setSelection([selection[0], Number(event.target.value) - 1])
+                        setAnchor(null)
+                      }}
+                    >
+                      <option value="" disabled>{t('Select time')}</option>
+                      {hours.map(hour => hour + 1).filter(hour => selection && hour > selection[0]).map(hour => (
+                        <option key={hour} value={hour}>{timeLabel(hour)}</option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+              </details>
+            )}
 
             {ownBookings.length > 0 && (
-              <section className="mt-6 border-t border-border pt-5" aria-label={t('Your bookings for this table')}>
-                <h3 className="mb-3 text-xs font-semibold text-dim">{t('Your bookings for this table')}</h3>
-                <div className="space-y-2">
+              <section className="mt-5" aria-label={t('Your bookings for this table')}>
+                <h3 className="mb-2 text-base font-semibold text-text">{t('Your bookings for this table')}</h3>
+                <div className="divide-y divide-border">
                   {ownBookings.map(booking => (
-                    <div key={booking.id} className="flex items-center justify-between gap-3 rounded-md bg-raised px-3 py-2">
-                      <span className="text-sm tabular-nums text-text">{t('{start} to {end}', { start: booking.start_time.slice(0, 5), end: booking.end_time.slice(0, 5) })}</span>
+                    <div key={booking.id} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 py-2">
+                      <span className="text-base tabular-nums text-text">{t('{start} to {end}', { start: booking.start_time.slice(0, 5), end: booking.end_time.slice(0, 5) })}</span>
                       <button
                         onClick={() => handleCancel(booking)}
-                        disabled={cancelBooking.isPending}
-                        className="btn-ghost min-h-10 text-red hover:text-red"
+                        disabled={cancelBooking.isPending || createBooking.isPending}
+                        className="btn-ghost min-h-11 text-base text-red hover:text-red"
                         aria-label={t('Cancel booking from {start} to {end}', { start: booking.start_time.slice(0, 5), end: booking.end_time.slice(0, 5) })}
                       >
-                        <Trash2 className="h-3.5 w-3.5" /> {t('Cancel')}
+                        <Trash2 className="h-4 w-4" /> {t('Cancel')}
                       </button>
                     </div>
                   ))}
                 </div>
               </section>
             )}
+          </div>
+          <div className="shrink-0 border-t border-border bg-surface px-5 pt-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:px-8 sm:pb-6">
+            <div className="mb-3 min-h-6" role="status" aria-live="polite" aria-atomic="true">
+              {overlaps ? (
+                <p className="flex items-start gap-2 text-base leading-relaxed text-red"><AlertCircle className="mt-1 h-4 w-4 shrink-0" aria-hidden="true" />{t('Part of this time is already booked. Choose a free stretch.')}</p>
+              ) : validRange ? (
+                <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-base text-text">
+                  <p className="flex items-center gap-2 font-semibold tabular-nums">
+                    <Clock3 className="h-4 w-4 shrink-0 text-gold" aria-hidden="true" />
+                    {t('{start} to {end}', { start: timeLabel(validRange[0]), end: timeLabel(validRange[1]) })}
+                  </p>
+                  <span className="text-sm text-dim">{t('Hours: {count}', { count: validRange[1] - validRange[0] })}</span>
+                </div>
+              ) : <p className="text-base text-dim">{t(hasFreeHours ? 'Select a time to continue.' : 'No free hours on this date.')}</p>}
+            </div>
+            <button onClick={handleBook} disabled={!validRange || createBooking.isPending || cancelBooking.isPending} className="btn-primary min-h-12 w-full justify-center text-base">
+              {t(createBooking.isPending ? 'Confirming booking' : 'Confirm booking')}
+              {!createBooking.isPending && <ArrowRight className="h-4 w-4" aria-hidden="true" />}
+            </button>
           </div>
         </Dialog.Content>
       </Dialog.Portal>

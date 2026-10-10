@@ -8,11 +8,17 @@ The site starts in dark mode with a red accent. Theme and language controls are 
 
 The club image is served from `public/club-logo.jpg` and is also used as the favicon.
 
+The main booking page has one table list, a scrollable week selector and a date field for later days. Theme, language and sign-out are grouped in the header settings menu. On mobile, primary navigation stays at the bottom; the booking dialog uses a scrollable sheet with a fixed confirmation area. The old separate 2D plan and its unused admin editor have been removed.
+
 ## 3D Beta
 
-The `#/beta` route offers an optional Three.js room. Drag or swipe to rotate, use the wheel or pinch gesture to zoom, and click a table to open the regular booking dialog. Arrow keys rotate the focused scene, `+` and `-` zoom, and `R` resets it. The adjacent table list provides keyboard access and remains usable when WebGL is unavailable.
+The `#/beta` route offers an optional Three.js room. Drag or swipe to rotate, use the wheel or pinch gesture to zoom, and click a table to open the regular booking dialog. The view controls include a top-down view of the same room. Arrow keys rotate the focused scene, `+` and `-` zoom, and `R` resets it. The table list below provides keyboard access and remains usable when WebGL is unavailable.
 
-The room uses an experimental arrangement, not a measured model of the venue. Tables, availability and booking mutations use the same API and query cache as the main interface. The 3D bundle loads only when this route is opened, and the scene renders on interaction rather than running an idle animation loop.
+The rectangular room follows the club's supplied sketch, photo and placement corrections: the kitchen and sofa are at the left, the RPG table stands beside the sofa, two Warhammer tables run across the room, and the craft desk is at the front left. The entrance is centered on the front wall, in front of the gaming tables. The cabinet is to your right as you enter; the red pennant hangs on the left wall behind the craft desk. Dimensions are approximate. Furniture is defined in `src/components/three/roomLayout.ts`; the kitchen and sofa are scenery.
+
+The gaming positions match API tables by unambiguous RPG / D&D and numbered Warhammer / 40K / WH / Wargaming names, including Russian aliases. The craft desk also opens its matching Craft booking. Explicit `role` values are supported by the scene contract. Unknown or duplicate names are not assigned by array order or arbitrary ID; those API records remain bookable in the list. Every clickable table displays its original API name, including on mobile, without translation or replacement with a role or number. The local fixture uses the club's current table names, with sample availability and bookings.
+
+Availability and booking mutations use the same API and query cache as the main interface. The 3D bundle loads only when this route is opened, and the scene renders on interaction rather than running an idle animation loop.
 
 ## Run locally
 
@@ -108,7 +114,7 @@ Run with the same Node 20 or newer used for the build:
 npm test
 ```
 
-The tests cover signed callback parsing, URL cleanup, stale and malformed callbacks, HashRouter routing, token expiry, corrupt stored sessions, unavailable browser storage, browser language detection, theme defaults and translation completeness. A real end-to-end Telegram login still needs the configured bot domain and a reachable backend; local tests do not verify that external setup.
+The tests cover signed callback parsing, URL cleanup, stale and malformed callbacks, HashRouter routing, token expiry, corrupt stored sessions, unavailable browser storage, browser language detection, theme defaults, translation completeness, physical room placement and table identity matching. A real end-to-end Telegram login still needs the configured bot domain and a reachable backend; local tests do not verify that external setup.
 
 ## Local interface preview
 

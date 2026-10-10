@@ -3,9 +3,11 @@ import { commonMessages } from '@/i18n/common'
 import { accountMessages } from '@/i18n/account'
 import { bookingMessages } from '@/i18n/booking'
 import { betaMessages } from '@/i18n/beta'
+import { comfortMessages } from '@/i18n/comfort'
+import { bookingComfortMessages } from '@/i18n/bookingComfort'
 import { LANGUAGE_KEY, THEME_KEY, LOCALES, readLanguage, readTheme, interpolate, type Language, type Theme } from './settings'
 
-const messages = { ...commonMessages, ...accountMessages, ...bookingMessages, ...betaMessages }
+const messages = { ...commonMessages, ...accountMessages, ...bookingMessages, ...betaMessages, ...comfortMessages, ...bookingComfortMessages }
 type Variables = Record<string, string | number>
 
 interface Preferences {

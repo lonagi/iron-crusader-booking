@@ -33,7 +33,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastContext.Provider value={{ toast }}>
       {children}
-      <div className="fixed bottom-4 right-4 z-[70] flex flex-col gap-2 w-[min(22rem,calc(100vw-2rem))] pointer-events-none" aria-live="polite" aria-atomic="false">
+      <div className="fixed top-4 right-4 z-[70] flex flex-col gap-2 w-[min(24rem,calc(100vw-2rem))] pointer-events-none lg:bottom-4 lg:top-auto" aria-live="polite" aria-atomic="false">
         <AnimatePresence mode="popLayout">
           {toasts.map(t => {
             const c = config[t.type]
@@ -49,8 +49,8 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                 style={{ background: c.bg, border: `1px solid ${c.border}`, boxShadow: '0 4px 24px rgba(36,44,40,0.1)' }}
               >
                 <span style={{ color: c.color }} className="shrink-0 mt-0.5">{c.icon}</span>
-                <p className="text-sm text-text flex-1">{t.message}</p>
-                <button onClick={() => remove(t.id)} aria-label={translate('Dismiss notification')} className="shrink-0 text-muted hover:text-text transition-colors p-1">
+                <p className="text-base text-text flex-1">{t.message}</p>
+                <button onClick={() => remove(t.id)} aria-label={translate('Dismiss notification')} className="-mr-2 -mt-2 flex h-11 w-11 shrink-0 items-center justify-center text-muted hover:text-text transition-colors">
                   <X className="w-3.5 h-3.5" />
                 </button>
               </motion.div>

@@ -17,7 +17,6 @@ export default defineConfig({
           vendor: ['react', 'react-dom', 'react-router-dom'],
           query: ['@tanstack/react-query'],
           motion: ['framer-motion'],
-          dnd: ['@dnd-kit/core', '@dnd-kit/modifiers', '@dnd-kit/sortable', '@dnd-kit/utilities'],
           radix: [
             '@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu',
             '@radix-ui/react-label', '@radix-ui/react-popover',
