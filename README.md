@@ -2,6 +2,16 @@
 
 Table booking for the Iron Crusader Warhammer club. A React and TypeScript frontend using Vite, Tailwind CSS, React Router and TanStack Query.
 
+## Required Telegram group membership
+
+New bookings require confirmed membership of group `-1001499989408`. The frontend requests the authenticated `GET /api/v1/auth/membership` endpoint when opening a booking dialog and repeats the check immediately before every creation request. Missing endpoints, network failures, malformed replies, another group or another user's identity all prevent creation. Existing bookings can still be cancelled. The same dialog and mutation protect the normal and 3D interfaces, with messages in all four languages.
+
+**Server integration is still required.** The current live API's published schema has no membership endpoint. This repository contains a frontend and a tested integration module, not the running booking server. Publishing this frontend before integrating the server will block all new bookings through this site. It will not protect an unchanged API against direct requests.
+
+The API owner must install the [server module and integration instructions](server-integration/README.md), configure the bot token on the server, and make the bot an administrator of this group. The server must independently check membership before every booking write, including creation through the bot. Deploy this server enforcement first, then publish the frontend. No client flag, saved membership value or admin role bypasses the new frontend requirement.
+
+`VITE_TG_GROUP_URL` optionally supplies the actual Telegram invitation/public link shown to nonmembers. A group ID is not an invitation link. The group ID is fixed in the server and client contracts; never put a bot token in any `VITE_` variable.
+
 ## Appearance and languages
 
 The site starts in dark mode with a red accent. Theme and language controls are available before sign-in and in the main header. The selected theme persists between visits. English, Russian, Romanian and Ukrainian are supported throughout the interface, including dates and admin screens. The first visit uses the first supported language in the browser's preference list, falling back to English; a manual choice is saved.
@@ -96,6 +106,7 @@ See the official [LoginUrl contract](https://core.telegram.org/bots/api#loginurl
 | `VITE_API_BASE_URL` | Existing HTTPS API address. Leave empty only for a same-origin API. |
 | `VITE_TG_BOT_USERNAME` | Existing Telegram bot username without `@`. |
 | `VITE_TG_APP_LOGIN_ENABLED` | Optional. Keep `false` unless the bot owner's `/start booking` flow is ready. |
+| `VITE_TG_GROUP_URL` | Optional HTTPS `t.me` public group or invitation link for nonmembers. |
 
 ## Build and deploy
 
@@ -116,6 +127,8 @@ npm test
 
 The tests cover signed callback parsing, URL cleanup, stale and malformed callbacks, HashRouter routing, token expiry, corrupt stored sessions, unavailable browser storage, browser language detection, theme defaults, translation completeness, physical room placement and table identity matching. A real end-to-end Telegram login still needs the configured bot domain and a reachable backend; local tests do not verify that external setup.
 
+Membership tests also cover incorrect group/user responses, denied access, outages, account changes during verification, repeated creation attempts after leaving the group, and a server refusal after a successful preflight. Test the server module separately with `python -m unittest discover -s server-integration -p "test_*.py" -v`; its Telegram responses are mocked and no live bookings are created.
+
 ## Local interface preview
 
 With the development server running, open `/iron-crusader-booking/tests/ui-fixture.html#/book` to review the interface with sample tables and bookings. The fixture intercepts API requests locally and does not contact the club backend. It is not included in the production build. Use `?error=1#/book` to inspect a connection failure, `?empty=1#/my` for an empty account, or `?role=member#/book` for a non-admin view. These parameters go after `ui-fixture.html`.
@@ -123,3 +136,5 @@ With the development server running, open `/iron-crusader-booking/tests/ui-fixtu
 The sample session stays in the fixture document and does not overwrite the application's saved session. Theme and language preferences are shared with the normal local preview.
 
 Open `/iron-crusader-booking/tests/ui-fixture.html#/beta` for a sample 3D room, or add `?no-webgl=1#/beta` after the fixture filename to test the fallback. Fixture changes are in memory and reset on reload; no sample tables or bookings are sent to the live API.
+
+For membership states, add `?membership=nonmember#/book`, `?membership=unavailable#/book` or `?membership=unsupported#/book`. `?membership=join#/book` simulates joining on the next manual check. `?membership=revoked#/book` simulates the server rejecting creation after a positive preflight. The default fixture account is a sample member; this is not evidence of live Telegram membership.

@@ -44,6 +44,7 @@ export function LoginPage() {
         <div className="mx-auto w-full max-w-[390px] py-10 lg:py-16">
           <h2 className="page-heading">{t('Book a table')}</h2>
           <p className="mt-4 text-base leading-7 text-dim">{t('Sign in with Telegram, choose a table and pick a time. Your bookings will be saved here.')}</p>
+          <p className="mt-3 text-sm leading-6 text-muted">{t('Booking is available to members of the club Telegram group.')}</p>
           <div className="mt-9"><TelegramSignIn onSuccess={finishSignIn} /></div>
           {session && awaitingCallback && <button type="button" onClick={finishSignIn} className="mt-4 w-full py-1 text-sm text-muted underline underline-offset-4 hover:text-text">{t('Keep my current account')}</button>}
           <div className="mt-9 flex items-start gap-3 border-t border-border pt-6">

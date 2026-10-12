@@ -59,6 +59,7 @@
         { id: 3, table_id: 3, user_id: 7, user_name: 'Sam', date, start_time: '10:00:00', end_time: '22:00:00', created_at: new Date().toISOString() },
       ]
       let nextId = 10
+      let membershipChecks = 0
       const originalFetch = window.fetch.bind(window)
       window.fetch = async (input, options = {}) => {
         const url = new URL(typeof input === 'string' ? input : input.url, location.origin)
@@ -67,8 +68,20 @@
         if (params.has('error')) return response({ detail: 'Fixture server error' }, 503)
         const path = url.pathname.replace('/api/v1', '').replace('/admin', '')
         const method = options.method ?? 'GET'
+        const membershipMode = params.get('membership') ?? 'member'
+        const membershipError = (code, status) => response({ detail: { code, chat_id: '-1001499989408' } }, status)
+        if (path === '/auth/membership') {
+          membershipChecks++
+          if (membershipMode === 'unsupported') return response({ detail: 'Not Found' }, 404)
+          if (membershipMode === 'unavailable') return membershipError('GROUP_MEMBERSHIP_UNAVAILABLE', 503)
+          return response({ chat_id: '-1001499989408', user_id: 42, is_member: membershipMode !== 'nonmember' && (membershipMode !== 'join' || membershipChecks > 1) })
+        }
         if (method === 'DELETE') { bookings = bookings.filter(item => item.id !== Number(path.split('/').pop())); return new Response(null, { status: 204 }) }
         if (method === 'POST' && path === '/bookings') {
+          // Simulate the required server guard too, including revocation after a
+          // successful preflight. Real protection requires the backend integration.
+          if (['nonmember', 'revoked'].includes(membershipMode)) return membershipError('GROUP_MEMBERSHIP_REQUIRED', 403)
+          if (['unavailable', 'unsupported'].includes(membershipMode)) return membershipError('GROUP_MEMBERSHIP_UNAVAILABLE', 503)
           const data = JSON.parse(options.body)
           const conflict = bookings.some(item => item.table_id === data.table_id && item.date === data.date && item.start_time < data.end_time && item.end_time > data.start_time)
           if (conflict) return response({ detail: 'Already booked' }, 409)

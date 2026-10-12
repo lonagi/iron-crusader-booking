@@ -29,12 +29,16 @@ jobs:
 
       - run: npm test
 
+      - name: Test server membership module offline
+        run: python3 -B -m unittest discover -s server-integration -p 'test_*.py' -v
+
       - name: Build
         run: npm run build
         env:
           VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
           VITE_TG_BOT_USERNAME: ${{ secrets.VITE_TG_BOT_USERNAME }}
           VITE_TG_APP_LOGIN_ENABLED: ${{ vars.VITE_TG_APP_LOGIN_ENABLED }}
+          VITE_TG_GROUP_URL: ${{ vars.VITE_TG_GROUP_URL }}
 
       - uses: actions/upload-pages-artifact@v3
         with:

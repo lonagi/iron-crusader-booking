@@ -12,6 +12,7 @@ pids
 node_modules/
 dist/
 dist-ssr/
+server-integration/__pycache__/
 
 # Local env
 .env

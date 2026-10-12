@@ -1,5 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { api } from './client'
+import { api, getSession } from './client'
+import { checkGroupMembership } from './membership'
+import { useSession } from '@/auth/SessionContext'
+import { createAfterMembershipCheck, MembershipError } from '@/auth/membership'
 import type {
   BookingCreate,
   BookingOut,
@@ -13,6 +16,7 @@ import type {
 
 export const qk = {
   me: ['me'] as const,
+  membership: (userId?: number) => ['membership', userId] as const,
   tables: ['tables'] as const,
   adminTables: ['admin', 'tables'] as const,
   bookings: (date: string) => ['bookings', date] as const,
@@ -27,6 +31,20 @@ export function useMe() {
     queryKey: qk.me,
     queryFn: () => api.get<MeResponse>('/api/v1/auth/me'),
     staleTime: 1000 * 60 * 5,
+  })
+}
+
+export function useGroupMembership() {
+  const { session } = useSession()
+  return useQuery({
+    queryKey: qk.membership(session?.user_id),
+    queryFn: checkGroupMembership,
+    enabled: Boolean(session),
+    retry: false,
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: 'always',
   })
 }
 
@@ -101,7 +119,16 @@ export function useAdminBookings(date: string) {
 export function useCreateBooking() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (data: BookingCreate) => api.post<BookingOut>('/api/v1/bookings', data),
+    mutationFn: (data: BookingCreate) => {
+      const session = getSession()
+      if (!session) throw new MembershipError('GROUP_MEMBERSHIP_UNAVAILABLE')
+      return createAfterMembershipCheck({
+        userId: session.user_id,
+        check: checkGroupMembership,
+        sessionStillCurrent: () => getSession()?.token === session.token,
+        create: () => api.post<BookingOut>('/api/v1/bookings', data),
+      })
+    },
     onSuccess: (_, variables) => {
       qc.invalidateQueries({ queryKey: qk.bookings(variables.date) })
       qc.invalidateQueries({ queryKey: qk.myBookings })

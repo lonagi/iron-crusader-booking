@@ -4,10 +4,12 @@ import { AlertCircle, ArrowRight, ChevronDown, Clock3, Trash2, X } from 'lucide-
 import { cn } from '@/lib/cn'
 import { clubHours, hourToTimeStr, timeStrToHour } from '@/lib/dates'
 import { usePreferences } from '@/preferences/PreferencesContext'
-import { useCreateBooking, useCancelBooking } from '@/api/hooks'
+import { useCreateBooking, useCancelBooking, useGroupMembership } from '@/api/hooks'
 import { useSession } from '@/auth/SessionContext'
 import { useToast } from '@/lib/toast'
 import { HttpError } from '@/api/client'
+import { MembershipError, telegramGroupUrl, type MembershipErrorCode } from '@/auth/membership'
+import { MembershipNotice } from './MembershipNotice'
 import type { BookingOut, TableOut } from '@/api/types'
 
 interface BookingDialogProps {
@@ -26,6 +28,14 @@ export function BookingDialog({ table, date, bookings, onClose, onRefresh }: Boo
   const toast = useToast()
   const createBooking = useCreateBooking()
   const cancelBooking = useCancelBooking()
+  const membership = useGroupMembership()
+  const [membershipFailure, setMembershipFailure] = useState<MembershipErrorCode | null>(null)
+  const membershipError = membershipFailure ?? (membership.error instanceof MembershipError ? membership.error.code : null)
+  const membershipStatus = membership.isFetching || membership.isPending ? 'checking'
+    : membershipError === 'GROUP_MEMBERSHIP_REQUIRED' ? 'nonmember'
+    : membership.isError || membershipError ? 'unavailable'
+    : membership.data?.is_member === true ? 'member' : 'nonmember'
+  const canBook = membershipStatus === 'member'
   const hours = clubHours()
   const [selection, setSelection] = useState<[number, number] | null>(null)
   const [anchor, setAnchor] = useState<number | null>(null)
@@ -57,7 +67,7 @@ export function BookingDialog({ table, date, bookings, onClose, onRefresh }: Boo
   }
 
   async function handleBook() {
-    if (!validRange || createBooking.isPending) return
+    if (!validRange || !canBook || createBooking.isPending) return
     const [start, end] = validRange
     try {
       await createBooking.mutateAsync({ table_id: table.id, date, start_time: hourToTimeStr(start), end_time: hourToTimeStr(end) })
@@ -66,7 +76,9 @@ export function BookingDialog({ table, date, bookings, onClose, onRefresh }: Boo
       setAnchor(null)
       onRefresh()
     } catch (err) {
-      if (err instanceof HttpError && err.status === 409) {
+      if (err instanceof MembershipError) {
+        setMembershipFailure(err.code)
+      } else if (err instanceof HttpError && err.status === 409) {
         toast(t('Someone just booked that time. Choose another slot.'), 'error')
         setSelection(null)
         setAnchor(null)
@@ -110,6 +122,13 @@ export function BookingDialog({ table, date, bookings, onClose, onRefresh }: Boo
           </div>
 
           <div className="min-h-0 overflow-y-auto overscroll-contain px-5 pb-6 sm:px-8">
+            <MembershipNotice
+              status={membershipStatus}
+              retrying={membership.isFetching || createBooking.isPending}
+              groupUrl={telegramGroupUrl(import.meta.env.VITE_TG_GROUP_URL)}
+              onRetry={() => { setMembershipFailure(null); void membership.refetch() }}
+            />
+            {canBook && <>
             <div className="mb-4">
               <h3 className="text-lg font-semibold text-text">{t('Choose your hours')}</h3>
               <p id="hour-selection-help" className="mt-1 text-base leading-relaxed text-dim">
@@ -126,7 +145,7 @@ export function BookingDialog({ table, date, bookings, onClose, onRefresh }: Boo
                   <button
                     key={hour}
                     type="button"
-                    disabled={Boolean(booking) || createBooking.isPending}
+                    disabled={!canBook || Boolean(booking) || createBooking.isPending}
                     aria-pressed={selected}
                     aria-label={t('{start} to {end}, {status}', { start: timeLabel(hour), end: timeLabel(hour + 1), status: t(own ? 'Your booking' : booking ? 'Booked' : 'Available') })}
                     onClick={() => selectHour(hour)}
@@ -161,7 +180,7 @@ export function BookingDialog({ table, date, bookings, onClose, onRefresh }: Boo
                     <select
                       className="input mt-2 min-h-12 min-w-0 text-base"
                       value={selection?.[0] ?? ''}
-                      disabled={createBooking.isPending}
+                      disabled={!canBook || createBooking.isPending}
                       onChange={event => {
                         const hour = Number(event.target.value)
                         setSelection([hour, hour])
@@ -177,7 +196,7 @@ export function BookingDialog({ table, date, bookings, onClose, onRefresh }: Boo
                     <select
                       className="input mt-2 min-h-12 min-w-0 text-base"
                       value={selection ? selection[1] + 1 : ''}
-                      disabled={!selection || createBooking.isPending}
+                      disabled={!canBook || !selection || createBooking.isPending}
                       onChange={event => {
                         if (selection) setSelection([selection[0], Number(event.target.value) - 1])
                         setAnchor(null)
@@ -193,6 +212,7 @@ export function BookingDialog({ table, date, bookings, onClose, onRefresh }: Boo
               </details>
             )}
 
+            </>}
             {ownBookings.length > 0 && (
               <section className="mt-5" aria-label={t('Your bookings for this table')}>
                 <h3 className="mb-2 text-base font-semibold text-text">{t('Your bookings for this table')}</h3>
@@ -214,7 +234,7 @@ export function BookingDialog({ table, date, bookings, onClose, onRefresh }: Boo
               </section>
             )}
           </div>
-          <div className="shrink-0 border-t border-border bg-surface px-5 pt-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:px-8 sm:pb-6">
+          {canBook && <div className="shrink-0 border-t border-border bg-surface px-5 pt-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:px-8 sm:pb-6">
             <div className="mb-3 min-h-6" role="status" aria-live="polite" aria-atomic="true">
               {overlaps ? (
                 <p className="flex items-start gap-2 text-base leading-relaxed text-red"><AlertCircle className="mt-1 h-4 w-4 shrink-0" aria-hidden="true" />{t('Part of this time is already booked. Choose a free stretch.')}</p>
@@ -228,11 +248,11 @@ export function BookingDialog({ table, date, bookings, onClose, onRefresh }: Boo
                 </div>
               ) : <p className="text-base text-dim">{t(hasFreeHours ? 'Select a time to continue.' : 'No free hours on this date.')}</p>}
             </div>
-            <button onClick={handleBook} disabled={!validRange || createBooking.isPending || cancelBooking.isPending} className="btn-primary min-h-12 w-full justify-center text-base">
+            <button onClick={handleBook} disabled={!canBook || !validRange || createBooking.isPending || cancelBooking.isPending} className="btn-primary min-h-12 w-full justify-center text-base">
               {t(createBooking.isPending ? 'Confirming booking' : 'Confirm booking')}
               {!createBooking.isPending && <ArrowRight className="h-4 w-4" aria-hidden="true" />}
             </button>
-          </div>
+          </div>}
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>

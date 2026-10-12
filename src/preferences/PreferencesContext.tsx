@@ -5,9 +5,10 @@ import { bookingMessages } from '@/i18n/booking'
 import { betaMessages } from '@/i18n/beta'
 import { comfortMessages } from '@/i18n/comfort'
 import { bookingComfortMessages } from '@/i18n/bookingComfort'
+import { membershipCopy } from '@/i18n/membership'
 import { LANGUAGE_KEY, THEME_KEY, LOCALES, readLanguage, readTheme, interpolate, type Language, type Theme } from './settings'
 
-const messages = { ...commonMessages, ...accountMessages, ...bookingMessages, ...betaMessages, ...comfortMessages, ...bookingComfortMessages }
+const messages = { ...commonMessages, ...accountMessages, ...bookingMessages, ...betaMessages, ...comfortMessages, ...bookingComfortMessages, ...membershipCopy }
 type Variables = Record<string, string | number>
 
 interface Preferences {

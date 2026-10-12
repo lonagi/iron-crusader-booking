@@ -1,5 +1,6 @@
 import type { ApiError } from './types'
 import { clearSession, getSession } from '../auth/session'
+import { membershipApiError } from '../auth/membership'
 
 export { clearSession, getSession, saveSession, type StoredSession } from '../auth/session'
 
@@ -66,13 +67,13 @@ async function request<T>(path: string, options: RequestInit = {}, authenticated
       clearSession()
       onUnauthorized?.()
     }
-    throw new HttpError(res.status, data, getErrorMessage(res.status, data))
+    throw membershipApiError(res.status, data) ?? new HttpError(res.status, data, getErrorMessage(res.status, data))
   }
   return data as T
 }
 
 export const api = {
-  get: <T>(path: string) => request<T>(path, { method: 'GET' }),
+  get: <T>(path: string, options: Pick<RequestInit, 'cache'> = {}) => request<T>(path, { ...options, method: 'GET' }),
   post: <T>(path: string, body: unknown, authenticated = true) =>
     request<T>(path, { method: 'POST', body: JSON.stringify(body) }, authenticated),
   patch: <T>(path: string, body: unknown) =>
