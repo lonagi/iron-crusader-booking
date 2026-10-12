@@ -1,5 +1,7 @@
 import { getSession, api, HttpError } from './client'
-import { MEMBERSHIP_PATH, MembershipError, readMembership } from '../auth/membership'
+import { MEMBERSHIP_PATH, MembershipError, readMembership, membershipCheckEnabled } from '../auth/membership'
+
+export const GROUP_MEMBERSHIP_ENABLED = membershipCheckEnabled(import.meta.env.VITE_TG_MEMBERSHIP_ENABLED)
 
 export async function checkGroupMembership() {
   const session = getSession()

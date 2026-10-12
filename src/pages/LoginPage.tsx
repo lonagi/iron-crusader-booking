@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { Clock3 } from 'lucide-react'
 import { useSession } from '@/auth/SessionContext'
 import { getTelegramCallback } from '@/auth/telegramCallback'
 import { usePreferences } from '@/preferences/PreferencesContext'
@@ -27,32 +26,29 @@ export function LoginPage() {
   }, [session, awaitingCallback, navigate, location.state])
 
   return (
-    <main className="grid min-h-screen bg-bg lg:grid-cols-[1.05fr_1fr]">
-      <section className="login-poster flex flex-col justify-between px-6 py-6 sm:px-14 sm:py-10 lg:min-h-screen lg:px-14 xl:px-16">
-        <img src={`${import.meta.env.BASE_URL}club-logo.jpg`} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-25 lg:opacity-65" />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#170c0a] via-[#170c0a]/60 to-[#170c0a]/25" />
+    <main className="login-layout">
+      <section className="login-poster">
+        <img src={`${import.meta.env.BASE_URL}club-logo.jpg`} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover" />
+        <div className="login-poster-shade" />
         <div className="relative z-10"><Brand inverse /></div>
-        <div className="relative z-10 mt-10 hidden lg:block lg:mt-72">
-          <h1 className="max-w-xl font-display text-[38px] font-medium uppercase leading-[1.13] tracking-[-.02em] sm:text-[52px] xl:text-[66px]">{t('Bring your army.')}<br /><span className="text-[#f0b29f]">{t("We'll keep a table.")}</span></h1>
-        </div>
-        <div className="relative z-10 mt-8 hidden flex-wrap items-center justify-between gap-2 border-t border-[#f5ede130] pt-5 text-sm text-[#e5cdc2] lg:flex">
-          <span>{t('Club hours')}</span><span>{t('10:00 to 22:00')}</span>
+        <div className="relative z-10">
+          <h2 className="login-poster-title">{t('Warhammer and tabletop games')}</h2>
         </div>
       </section>
-      <section className="flex min-w-0 flex-col justify-between px-6 py-7 sm:px-14 sm:py-10 lg:px-12 xl:px-16">
-        <div className="flex justify-end"><PreferencesControls /></div>
-        <div className="mx-auto w-full max-w-[390px] py-10 lg:py-16">
-          <h2 className="page-heading">{t('Book a table')}</h2>
-          <p className="mt-4 text-base leading-7 text-dim">{t('Sign in with Telegram, choose a table and pick a time. Your bookings will be saved here.')}</p>
-          <p className="mt-3 text-sm leading-6 text-muted">{t('Booking is available to members of the club Telegram group.')}</p>
-          <div className="mt-9"><TelegramSignIn onSuccess={finishSignIn} /></div>
-          {session && awaitingCallback && <button type="button" onClick={finishSignIn} className="mt-4 w-full py-1 text-sm text-muted underline underline-offset-4 hover:text-text">{t('Keep my current account')}</button>}
-          <div className="mt-9 flex items-start gap-3 border-t border-border pt-6">
-            <Clock3 className="mt-0.5 h-4 w-4 shrink-0 text-muted" />
-            <div className="text-sm leading-7 text-muted"><p>{t('Club hours')} {t('10:00 to 22:00')}</p><p>{t('Book up to 30 days ahead.')}</p></div>
+      <section className="login-content" aria-labelledby="login-title">
+        <header className="login-header">
+          <div className="login-mobile-brand"><Brand /></div>
+          <div className="login-preferences"><PreferencesControls /></div>
+        </header>
+        <div className="login-form-area">
+          <div className="login-form">
+            <h1 id="login-title" className="login-title">{t('Reserve your table')}</h1>
+            <p className="login-intro">{t('Sign in with Telegram to choose a table and time.')}</p>
+            <div className="login-sign-in"><TelegramSignIn onSuccess={finishSignIn} /></div>
+            {session && awaitingCallback && <button type="button" onClick={finishSignIn} className="mt-3 min-h-11 text-sm text-dim underline underline-offset-4 hover:text-text">{t('Keep my current account')}</button>}
           </div>
         </div>
-        <p className="mx-auto w-full max-w-[390px] text-sm leading-6 text-muted">Iron Crusader {t('Warhammer Club')}</p>
+        <footer className="login-hours">{t('Club hours: 10:00 to 22:00')}</footer>
       </section>
     </main>
   )

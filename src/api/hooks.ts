@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, getSession } from './client'
-import { checkGroupMembership } from './membership'
+import { checkGroupMembership, GROUP_MEMBERSHIP_ENABLED } from './membership'
 import { useSession } from '@/auth/SessionContext'
 import { createAfterMembershipCheck, MembershipError } from '@/auth/membership'
 import type {
@@ -39,7 +39,7 @@ export function useGroupMembership() {
   return useQuery({
     queryKey: qk.membership(session?.user_id),
     queryFn: checkGroupMembership,
-    enabled: Boolean(session),
+    enabled: GROUP_MEMBERSHIP_ENABLED && Boolean(session),
     retry: false,
     staleTime: 0,
     gcTime: 0,
@@ -123,6 +123,7 @@ export function useCreateBooking() {
       const session = getSession()
       if (!session) throw new MembershipError('GROUP_MEMBERSHIP_UNAVAILABLE')
       return createAfterMembershipCheck({
+        checkMembership: GROUP_MEMBERSHIP_ENABLED,
         userId: session.user_id,
         check: checkGroupMembership,
         sessionStillCurrent: () => getSession()?.token === session.token,

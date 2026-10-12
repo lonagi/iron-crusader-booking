@@ -50,7 +50,7 @@ test('interpolation handles zero, literal replacement characters and missing val
 })
 
 test('every translation is complete and preserves named values in all four locales', async () => {
-  const dictionaries = await Promise.all(['common', 'booking', 'account', 'beta', 'comfort', 'bookingComfort', 'membership'].map(name => loadTypeScript(`../src/i18n/${name}.ts`)))
+  const dictionaries = await Promise.all(['common', 'booking', 'account', 'beta', 'comfort', 'bookingComfort', 'membership', 'login'].map(name => loadTypeScript(`../src/i18n/${name}.ts`)))
   const parameters = text => [...text.matchAll(/\{(\w+)\}/g)].map(match => match[1]).sort()
   let checked = 0
   for (const module of dictionaries) for (const dictionary of Object.values(module)) {

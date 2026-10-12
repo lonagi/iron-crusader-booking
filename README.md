@@ -2,15 +2,15 @@
 
 Table booking for the Iron Crusader Warhammer club. A React and TypeScript frontend using Vite, Tailwind CSS, React Router and TanStack Query.
 
-## Required Telegram group membership
+## Telegram group membership
 
-New bookings require confirmed membership of group `-1001499989408`. The frontend requests the authenticated `GET /api/v1/auth/membership` endpoint when opening a booking dialog and repeats the check immediately before every creation request. Missing endpoints, network failures, malformed replies, another group or another user's identity all prevent creation. Existing bookings can still be cancelled. The same dialog and mutation protect the normal and 3D interfaces, with messages in all four languages.
+The supplied third-party API does not expose group membership. The website uses its existing Telegram authentication and booking endpoints. It cannot determine whether an authenticated user belongs to group `-1001499989408`, and it does not claim that membership was verified. Browser-only checks cannot enforce permissions on an external API.
 
-**Server integration is still required.** The current live API's published schema has no membership endpoint. This repository contains a frontend and a tested integration module, not the running booking server. Publishing this frontend before integrating the server will block all new bookings through this site. It will not protect an unchanged API against direct requests.
+**The optional membership integration is off by default.** Leave `VITE_TG_MEMBERSHIP_ENABLED=false` for the current API. This avoids requesting a nonexistent endpoint and blocking every booking. Turning it on is not a way to add membership checking to that API.
 
-The API owner must install the [server module and integration instructions](server-integration/README.md), configure the bot token on the server, and make the bot an administrator of this group. The server must independently check membership before every booking write, including creation through the bot. Deploy this server enforcement first, then publish the frontend. No client flag, saved membership value or admin role bypasses the new frontend requirement.
+The [server module and integration instructions](server-integration/README.md) are retained for a possible future server implementation. Only after that contract is deployed should `VITE_TG_MEMBERSHIP_ENABLED=true` be set at build time (or as a GitHub Actions repository variable). In that mode the frontend checks on opening a booking dialog and again before creation. Missing endpoints, outages and invalid responses block creation; there is no automatic fallback. The API must independently enforce the same rule on every write. The build setting itself is not a security boundary. Explicit permission errors returned by the booking API are respected in either mode.
 
-`VITE_TG_GROUP_URL` optionally supplies the actual Telegram invitation/public link shown to nonmembers. A group ID is not an invitation link. The group ID is fixed in the server and client contracts; never put a bot token in any `VITE_` variable.
+`VITE_TG_GROUP_URL` optionally supplies a real Telegram invitation/public link for membership error messages. A group ID is not an invitation link. Never put a bot token in any `VITE_` variable.
 
 ## Appearance and languages
 
@@ -137,4 +137,4 @@ The sample session stays in the fixture document and does not overwrite the appl
 
 Open `/iron-crusader-booking/tests/ui-fixture.html#/beta` for a sample 3D room, or add `?no-webgl=1#/beta` after the fixture filename to test the fallback. Fixture changes are in memory and reset on reload; no sample tables or bookings are sent to the live API.
 
-For membership states, add `?membership=nonmember#/book`, `?membership=unavailable#/book` or `?membership=unsupported#/book`. `?membership=join#/book` simulates joining on the next manual check. `?membership=revoked#/book` simulates the server rejecting creation after a positive preflight. The default fixture account is a sample member; this is not evidence of live Telegram membership.
+The default fixture models the supplied API: membership requests return 404 while normal bookings work. Use `?signed-out#/login` to preview the sign-in screen without changing a real session. `?membership=nonmember#/book` or `?membership=unavailable#/book` simulate explicit server permission failures on creation. To exercise optional preflight states, start Vite with `VITE_TG_MEMBERSHIP_ENABLED=true`: `?membership=member#/book` allows booking, `?membership=join#/book` allows it after a manual recheck, and `?membership=revoked#/book` rejects the write after a positive preflight. Fixture states are not evidence of live Telegram membership.

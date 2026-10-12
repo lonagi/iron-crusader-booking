@@ -2,6 +2,8 @@
 
 This directory is a tested server component and integration handoff. It is **not deployed** and is not part of the browser build. The existing API owner must wire it into the real booking server. The public API schema currently exposes no membership endpoint.
 
+The frontend currently leaves this integration disabled (`VITE_TG_MEMBERSHIP_ENABLED=false`) to remain compatible with the supplied API. This directory is retained as a future option. Only enable the frontend integration after a server actually implements and enforces the contract below.
+
 `telegram_membership.py` uses Python 3.10+ and the standard library. It checks the fixed club group `-1001499989408` through Telegram. Set `TELEGRAM_BOT_TOKEN` only in the server environment. The bot must belong to this group and be an administrator. Never put its token in a `VITE_` setting, frontend source, GitHub Pages, logs, or client response.
 
 The verifier validates the bot identity and its current admin status, then verifies the authenticated user's exact Telegram ID. Owners, admins, members, and restricted users with `is_member: true` are allowed. Left, banned (`kicked`), and restricted nonmembers are denied. Telegram failures, timeouts, malformed responses, mismatched identities, missing configuration, and lost bot admin rights fail closed. Only the bot ID is cached. Each check reads current membership and bot permissions.

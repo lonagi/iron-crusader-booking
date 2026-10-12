@@ -7,9 +7,10 @@ export interface MembershipNoticeProps {
   onRetry: () => void
   retrying?: boolean
   groupUrl?: string
+  retryLabel?: string
 }
 
-export function MembershipNotice({ status, onRetry, retrying = false, groupUrl }: MembershipNoticeProps) {
+export function MembershipNotice({ status, onRetry, retrying = false, groupUrl, retryLabel }: MembershipNoticeProps) {
   const { t } = usePreferences()
   const titleId = useId()
 
@@ -51,7 +52,7 @@ export function MembershipNotice({ status, onRetry, retrying = false, groupUrl }
             )}
             <button type="button" onClick={onRetry} disabled={retrying} aria-busy={retrying} className="btn-secondary min-h-11 whitespace-normal text-center">
               {retrying && <LoaderCircle aria-hidden="true" className="h-4 w-4 shrink-0 animate-spin motion-reduce:animate-none" />}
-              {t(retrying ? 'Checking your group membership' : nonmember ? 'Check membership again' : 'Retry membership check')}
+              {t(retrying ? 'Checking your group membership' : retryLabel ?? (nonmember ? 'Check membership again' : 'Retry membership check'))}
             </button>
           </div>
         </div>

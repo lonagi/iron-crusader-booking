@@ -96,6 +96,47 @@
   .table-choice { display: flex; flex-direction: column; justify-content: space-between; width: 100%; height: 100%; min-height: 180px; padding: 24px; text-align: left; border: 1px solid rgb(var(--border) / .65); border-radius: 16px; background: rgb(var(--surface)); transition: background .15s, border-color .15s; }
   .table-choice:hover { background: rgb(var(--raised)); border-color: rgb(var(--accent) / .5); }
   .table-choice:disabled { opacity: .5; cursor: default; }
-  .login-poster { background: #291513; color: #f5ede1; position: relative; overflow: hidden; }
-  .login-poster::after { content: ''; position: absolute; inset: 16px; border: 1px solid #f5ede126; pointer-events: none; }
+  .login-layout { min-height: 100vh; min-height: 100svh; background: rgb(var(--bg)); }
+  .login-poster { display: none; background: #291513; color: #f5ede1; position: relative; overflow: hidden; }
+  .login-poster-shade { position: absolute; inset: 0; background: linear-gradient(180deg, #150d0b66 0%, #150d0b00 40%, #150d0bcc 100%); pointer-events: none; }
+  .login-poster-title { max-width: 510px; font-size: clamp(36px, 3.3vw, 60px); font-weight: 600; line-height: 1.12; letter-spacing: -.045em; text-wrap: balance; }
+  .login-content { display: flex; min-width: 0; min-height: 100vh; min-height: 100svh; flex-direction: column; padding: 24px; }
+  .login-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .login-mobile-brand img { width: 36px; height: 36px; }
+  .login-mobile-brand > a { gap: 9px; }
+  .login-mobile-brand > a > span > span:first-child { font-size: 16px; letter-spacing: .01em; }
+  .login-mobile-brand > a > span > span:last-child { display: none; }
+  .login-preferences > div { gap: 6px; }
+  .login-preferences label { padding: 0 4px; border-color: transparent; background: transparent; }
+  .login-preferences label > svg { display: none; }
+  .login-preferences select { max-width: 108px; font-size: 14px; }
+  .login-preferences button { border-color: transparent; background: transparent; }
+  .login-form-area { display: flex; flex: 1; align-items: center; padding: 64px 0; }
+  .login-form { width: 100%; max-width: 384px; margin: 0 auto; }
+  .login-title { font-size: clamp(32px, 4vw, 42px); font-weight: 600; line-height: 1.16; letter-spacing: -.045em; text-wrap: balance; }
+  .login-intro { margin-top: 18px; color: rgb(var(--dim)); font-size: 16px; line-height: 1.75; text-wrap: pretty; }
+  .login-sign-in { margin-top: 32px; }
+  .login-hours { width: 100%; max-width: 384px; margin: 0 auto; padding: 8px 0; color: rgb(var(--muted)); font-size: 14px; }
+  @media (max-width: 359px) {
+    .login-content { padding: 20px; }
+    .login-mobile-brand img { display: none; }
+    .login-header { gap: 8px; }
+    .login-preferences label { padding: 0; }
+  }
+  @media (min-width: 640px) {
+    .login-content { padding: 32px 40px; }
+    .login-mobile-brand img { width: 44px; height: 44px; }
+    .login-mobile-brand > a > span > span:first-child { font-size: 21px; }
+    .login-preferences select { max-width: 130px; font-size: 15px; }
+    .login-preferences label > svg { display: block; }
+  }
+  @media (min-width: 1024px) {
+    .login-layout { display: grid; grid-template-columns: 1fr 1fr; }
+    .login-poster { display: flex; flex-direction: column; justify-content: space-between; padding: 40px; margin: 16px 0 16px 16px; border-radius: 16px; }
+    .login-content { padding: 32px 40px; }
+    .login-header { justify-content: flex-end; }
+    .login-mobile-brand { display: none; }
+    .login-form-area { padding: 80px 0; }
+    .login-hours { padding-bottom: 8px; }
+  }
 }

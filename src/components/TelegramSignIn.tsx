@@ -48,7 +48,7 @@ function BrowserLogin({ onAuth, busy }: { onAuth: (data: TelegramAuthData) => vo
     script.setAttribute('data-telegram-login', BOT_USERNAME)
     script.setAttribute('data-size', 'large')
     script.setAttribute('data-userpic', 'false')
-    script.setAttribute('data-radius', '8')
+    script.setAttribute('data-radius', '10')
     script.setAttribute('data-lang', language)
     script.setAttribute('data-onauth', `${callbackName}(user)`)
     script.onerror = () => {
@@ -68,22 +68,22 @@ function BrowserLogin({ onAuth, busy }: { onAuth: (data: TelegramAuthData) => vo
 
   return (
     <div className="space-y-3">
-      <div className="relative flex min-h-12 items-center justify-center">
-        <div ref={container} className={busy || status === 'error' ? 'pointer-events-none opacity-40' : ''} aria-busy={status === 'loading' || busy} />
-        {status === 'loading' && (
-          <span className="absolute inset-0 flex items-center justify-center gap-2 bg-surface text-sm text-muted" role="status">
+      <div className={status === 'error' ? 'hidden' : 'relative flex min-h-12 items-center'}>
+        <div ref={container} className={busy || status !== 'ready' ? 'pointer-events-none invisible' : ''} aria-busy={status === 'loading' || busy} />
+        {(status === 'loading' || busy) && (
+          <span className="absolute inset-0 flex items-center gap-2 text-base text-dim" role="status">
             <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden="true" />
-            {t('Connecting to Telegram')}
+            {t(busy ? 'Signing in' : 'Connecting to Telegram')}
           </span>
         )}
       </div>
       {status === 'error' && (
-        <div className="space-y-3 text-center">
-          <p className="text-sm text-muted" role="alert">{t('Telegram did not load. Check your connection and try again.')}</p>
-          <button type="button" className="btn btn-secondary w-full justify-center" onClick={() => setAttempt(value => value + 1)}>
+        <div className="space-y-3">
+          <button type="button" className="btn btn-primary min-h-12 w-full" onClick={() => setAttempt(value => value + 1)}>
             <RefreshCw className="h-4 w-4" aria-hidden="true" />
             {t('Try again')}
           </button>
+          <p className="text-sm leading-6 text-dim" role="alert">{t('Telegram did not load. Check your connection and try again.')}</p>
         </div>
       )}
     </div>
@@ -127,39 +127,45 @@ export function TelegramSignIn({ onSuccess }: { onSuccess?: () => void } = {}) {
   }, [login, onSuccess])
 
   if (!VALID_BOT && !pendingAccount) {
-    return <p className="rounded-lg border border-border bg-raised p-4 text-sm leading-relaxed text-muted">{t('Sign-in is currently unavailable. Please contact the club to book a table.')}</p>
+    return (
+      <div className="space-y-3">
+        <button type="button" disabled className="btn btn-primary min-h-12 w-full" aria-describedby="login-unavailable">
+          <Send className="h-4 w-4" aria-hidden="true" />
+          {t('Sign in with Telegram')}
+        </button>
+        <p id="login-unavailable" className="text-sm leading-6 text-dim" role="status">{t('Sign-in is temporarily unavailable. Please try again later.')}</p>
+      </div>
+    )
   }
 
   return (
     <div className="space-y-4">
       {pendingAccount ? (
         <div className="space-y-3">
-          <p className="text-sm text-muted">{t('Confirm the account you want to use for bookings.')}</p>
           <button type="button" disabled={busy} className="btn btn-primary min-h-12 w-full justify-center" onClick={() => void signIn(pendingAccount)}>
             {busy ? <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Send className="h-4 w-4" aria-hidden="true" />}
             {busy ? t('Signing in') : t('Continue as {name}', { name: pendingAccount.first_name })}
           </button>
-          {VALID_BOT && <button type="button" disabled={busy} className="w-full py-1 text-sm text-muted hover:text-text" onClick={() => { setPendingAccount(null); setError(null) }}>{t('Use another account')}</button>}
+          {VALID_BOT && <button type="button" disabled={busy} className="min-h-11 text-sm text-dim underline underline-offset-4 hover:text-text" onClick={() => { setPendingAccount(null); setError(null) }}>{t('Use another account')}</button>}
         </div>
       ) : (
         <>
-          {APP_LOGIN_ENABLED && (
+          {APP_LOGIN_ENABLED && !showBrowser && (
             <div className="space-y-3">
               <a href={`https://t.me/${BOT_USERNAME}?start=booking`} target="_blank" rel="noopener noreferrer" className="btn btn-primary min-h-12 w-full justify-center">
                 <Send className="h-4 w-4" aria-hidden="true" />
                 {t('Open Telegram')}
                 <ArrowUpRight className="ml-auto h-4 w-4" aria-hidden="true" />
               </a>
-              <p className="text-center text-xs leading-relaxed text-muted">{t('Open the club bot, then tap Sign in.')}</p>
-              {!showBrowser && <button type="button" className="w-full py-1 text-sm text-muted underline underline-offset-4 hover:text-text" onClick={() => setShowBrowser(true)}>{t('Use this browser instead')}</button>}
+              <p className="text-sm leading-6 text-dim">{t('Open the club bot, then tap Sign in.')}</p>
+              <button type="button" className="min-h-11 text-sm text-dim underline underline-offset-4 hover:text-text" onClick={() => setShowBrowser(true)}>{t('Use this browser instead')}</button>
             </div>
           )}
           {showBrowser && <BrowserLogin onAuth={signIn} busy={busy} />}
-          {showBrowser && <p className="text-center text-xs leading-relaxed text-muted">{t('Telegram may ask for your number if this browser is not signed in.')}</p>}
-          {busy && <p className="flex items-center justify-center gap-2 text-sm text-muted" role="status"><LoaderCircle className="h-4 w-4 animate-spin" aria-hidden="true" />{t('Signing in')}</p>}
+          {showBrowser && APP_LOGIN_ENABLED && <button type="button" className="min-h-11 text-sm text-dim underline underline-offset-4 hover:text-text" onClick={() => setShowBrowser(false)}>{t('Open Telegram')}</button>}
         </>
       )}
-      {error && <p role="alert" className="rounded-lg border border-red/20 bg-red/5 p-3 text-sm leading-relaxed text-red">{t(error)}</p>}
+      {error && <p role="alert" className="text-sm leading-6 text-red">{t(error)}</p>}
     </div>
   )
 }

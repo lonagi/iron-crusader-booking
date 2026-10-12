@@ -8,6 +8,7 @@ import { useCreateBooking, useCancelBooking, useGroupMembership } from '@/api/ho
 import { useSession } from '@/auth/SessionContext'
 import { useToast } from '@/lib/toast'
 import { HttpError } from '@/api/client'
+import { GROUP_MEMBERSHIP_ENABLED } from '@/api/membership'
 import { MembershipError, telegramGroupUrl, type MembershipErrorCode } from '@/auth/membership'
 import { MembershipNotice } from './MembershipNotice'
 import type { BookingOut, TableOut } from '@/api/types'
@@ -31,11 +32,13 @@ export function BookingDialog({ table, date, bookings, onClose, onRefresh }: Boo
   const membership = useGroupMembership()
   const [membershipFailure, setMembershipFailure] = useState<MembershipErrorCode | null>(null)
   const membershipError = membershipFailure ?? (membership.error instanceof MembershipError ? membership.error.code : null)
-  const membershipStatus = membership.isFetching || membership.isPending ? 'checking'
-    : membershipError === 'GROUP_MEMBERSHIP_REQUIRED' ? 'nonmember'
+  const membershipStatus = membershipError === 'GROUP_MEMBERSHIP_REQUIRED' ? 'nonmember'
+    : membershipFailure ? 'unavailable'
+    : !GROUP_MEMBERSHIP_ENABLED ? 'unchecked'
+    : membership.isFetching || membership.isPending ? 'checking'
     : membership.isError || membershipError ? 'unavailable'
     : membership.data?.is_member === true ? 'member' : 'nonmember'
-  const canBook = membershipStatus === 'member'
+  const canBook = membershipStatus === 'member' || membershipStatus === 'unchecked'
   const hours = clubHours()
   const [selection, setSelection] = useState<[number, number] | null>(null)
   const [anchor, setAnchor] = useState<number | null>(null)
@@ -122,12 +125,13 @@ export function BookingDialog({ table, date, bookings, onClose, onRefresh }: Boo
           </div>
 
           <div className="min-h-0 overflow-y-auto overscroll-contain px-5 pb-6 sm:px-8">
-            <MembershipNotice
+            {membershipStatus !== 'unchecked' && <MembershipNotice
               status={membershipStatus}
               retrying={membership.isFetching || createBooking.isPending}
               groupUrl={telegramGroupUrl(import.meta.env.VITE_TG_GROUP_URL)}
-              onRetry={() => { setMembershipFailure(null); void membership.refetch() }}
-            />
+              retryLabel={GROUP_MEMBERSHIP_ENABLED ? undefined : 'Back to booking'}
+              onRetry={() => { setMembershipFailure(null); if (GROUP_MEMBERSHIP_ENABLED) void membership.refetch() }}
+            />}
             {canBook && <>
             <div className="mb-4">
               <h3 className="text-lg font-semibold text-text">{t('Choose your hours')}</h3>

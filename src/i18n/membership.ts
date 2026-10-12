@@ -1,4 +1,9 @@
 export const membershipCopy: Record<string, { ru: string; ro: string; uk: string }> = {
+  'Back to booking': {
+    ru: 'Вернуться к бронированию',
+    ro: 'Înapoi la rezervare',
+    uk: 'Повернутися до бронювання',
+  },
   'Booking is available to members of the club Telegram group.': {
     ru: 'Бронировать столы могут участники Telegram-группы клуба.',
     ro: 'Membrii grupului Telegram al clubului pot rezerva mese.',

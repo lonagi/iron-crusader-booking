@@ -1,7 +1,12 @@
-// This is a required server contract, not a browser-side security boundary.
+// This is an optional server contract, not a browser-side security boundary.
 // The API must repeat this check before writing every new booking.
 export const REQUIRED_GROUP_ID = '-1001499989408'
 export const MEMBERSHIP_PATH = '/api/v1/auth/membership'
+
+// Only enable this integration when the API actually implements the contract.
+export function membershipCheckEnabled(value: string | undefined): boolean {
+  return value === 'true'
+}
 
 export interface GroupMembership {
   chat_id: typeof REQUIRED_GROUP_ID
@@ -42,14 +47,15 @@ export function membershipApiError(status: number, body: unknown): MembershipErr
 }
 
 export async function createAfterMembershipCheck<T>(options: {
+  checkMembership?: boolean
   userId: number
   check: () => Promise<unknown>
   sessionStillCurrent: () => boolean
   create: () => Promise<T>
 }): Promise<T> {
-  const membership = readMembership(await options.check(), options.userId)
+  const membership = options.checkMembership === false ? null : readMembership(await options.check(), options.userId)
   if (!options.sessionStillCurrent()) throw new MembershipError('GROUP_MEMBERSHIP_UNAVAILABLE')
-  if (!membership.is_member) throw new MembershipError('GROUP_MEMBERSHIP_REQUIRED')
+  if (membership && !membership.is_member) throw new MembershipError('GROUP_MEMBERSHIP_REQUIRED')
   return options.create()
 }
 

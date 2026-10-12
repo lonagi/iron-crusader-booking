@@ -39,6 +39,7 @@ jobs:
           VITE_TG_BOT_USERNAME: ${{ secrets.VITE_TG_BOT_USERNAME }}
           VITE_TG_APP_LOGIN_ENABLED: ${{ vars.VITE_TG_APP_LOGIN_ENABLED }}
           VITE_TG_GROUP_URL: ${{ vars.VITE_TG_GROUP_URL }}
+          VITE_TG_MEMBERSHIP_ENABLED: ${{ vars.VITE_TG_MEMBERSHIP_ENABLED || 'false' }}
 
       - uses: actions/upload-pages-artifact@v3
         with:

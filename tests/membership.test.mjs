@@ -5,8 +5,29 @@ import ts from 'typescript'
 
 const source = await readFile(new URL('../src/auth/membership.ts', import.meta.url), 'utf8')
 const { outputText } = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2020 } })
-const { REQUIRED_GROUP_ID, MembershipError, readMembership, membershipApiError, createAfterMembershipCheck, telegramGroupUrl } = await import(`data:text/javascript;base64,${Buffer.from(outputText).toString('base64')}`)
+const { REQUIRED_GROUP_ID, MembershipError, readMembership, membershipApiError, createAfterMembershipCheck, telegramGroupUrl, membershipCheckEnabled } = await import(`data:text/javascript;base64,${Buffer.from(outputText).toString('base64')}`)
 const member = { chat_id: REQUIRED_GROUP_ID, user_id: 42, is_member: true }
+
+test('the optional membership integration is off unless explicitly configured', () => {
+  for (const value of [undefined, '', 'false', '0', '1', 'TRUE']) assert.equal(membershipCheckEnabled(value), false)
+  assert.equal(membershipCheckEnabled('true'), true)
+})
+
+test('the existing API can create bookings without calling the unsupported membership endpoint', async () => {
+  let checks = 0
+  let writes = 0
+  const options = {
+    checkMembership: membershipCheckEnabled(undefined), userId: 42,
+    check: async () => { checks++; throw new Error('Endpoint does not exist') },
+    sessionStillCurrent: () => true, create: async () => ++writes,
+  }
+  assert.equal(await createAfterMembershipCheck(options), 1)
+  assert.equal(checks, 0)
+  await assert.rejects(createAfterMembershipCheck({ ...options, sessionStillCurrent: () => false }))
+  assert.equal(writes, 1)
+  const forbidden = new MembershipError('GROUP_MEMBERSHIP_REQUIRED')
+  await assert.rejects(createAfterMembershipCheck({ ...options, create: async () => { throw forbidden } }), error => error === forbidden)
+})
 
 test('membership is bound to the requested group and signed-in account', () => {
   assert.equal(REQUIRED_GROUP_ID, '-1001499989408')
