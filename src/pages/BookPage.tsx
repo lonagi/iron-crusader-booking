@@ -13,6 +13,7 @@ export function BookPage() {
   const { t, formatDate, locale } = usePreferences()
   const [date, setDate] = useState(todayStr())
   const [selectedTable, setSelectedTable] = useState<TableOut | null>(null)
+  const [initialHour, setInitialHour] = useState<number | undefined>()
   const tablesQuery = useTables()
   const bookingsQuery = useBookingsByDate(date)
   const tables = tablesQuery.data ?? []
@@ -26,15 +27,17 @@ export function BookPage() {
     if (isValid(parseISO(value)) && value >= todayStr() && value <= maxBookingDate()) {
       setDate(value)
       setSelectedTable(null)
+      setInitialHour(undefined)
     }
   }
   function refresh() { void tablesQuery.refetch(); void bookingsQuery.refetch() }
+  function chooseTable(table: TableOut, hour?: number) { setInitialHour(hour); setSelectedTable(table) }
 
   return (
     <div className="mx-auto max-w-5xl">
       <header className="mb-8 sm:mb-10">
         <h1 className="page-heading">{t('Book a table')}</h1>
-        <p className="mt-3 text-base leading-relaxed text-dim">{t('A day, a table, a good game.')}</p>
+        <p className="mt-3 text-base leading-relaxed text-dim">{t('See booked times, then choose when to play.')}</p>
       </header>
 
       <section aria-labelledby="booking-day-heading" className="mb-9 sm:mb-12">
@@ -65,11 +68,11 @@ export function BookPage() {
           <h2 id="booking-table-heading" className="text-lg font-semibold">{t('Choose your table')}</h2>
           <button type="button" onClick={refresh} disabled={refreshing} aria-label={t('Refresh availability')} title={t('Refresh availability')} className="btn-icon border-transparent"><RotateCw className={cn('h-[18px] w-[18px]', refreshing && 'animate-spin')} /></button>
         </div>
-        {loading && <div role="status" aria-label={t('Loading tables')} className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">{Array.from({ length: 3 }, (_, i) => <div key={i} className="h-52 animate-pulse rounded-xl bg-surface" />)}</div>}
+        {loading && <div role="status" aria-label={t('Loading tables')} className="grid grid-cols-1 gap-5 md:grid-cols-2">{Array.from({ length: 4 }, (_, i) => <div key={i} className="h-64 animate-pulse rounded-xl bg-surface" />)}</div>}
         {!loading && failed && <div className="card flex flex-wrap items-center justify-between gap-5 p-6" role="alert"><div><h3 className="font-semibold">{t("We couldn't load the tables")}</h3><p className="mt-2 text-base text-dim">{t('Check your connection and try again.')}</p></div><button onClick={refresh} disabled={refreshing} className="btn-secondary">{t('Try again')} <RotateCw className="h-4 w-4" /></button></div>}
-        {!loading && !failed && <TableGrid tables={tables} bookings={bookings} onTableClick={setSelectedTable} />}
+        {!loading && !failed && <TableGrid tables={tables} bookings={bookings} date={date} onTableClick={chooseTable} />}
       </section>
-      {selectedTable && <BookingDialog table={selectedTable} date={date} bookings={bookings} onClose={() => setSelectedTable(null)} onRefresh={() => { void bookingsQuery.refetch() }} />}
+      {selectedTable && <BookingDialog table={selectedTable} date={date} bookings={bookings} initialHour={initialHour} onClose={() => setSelectedTable(null)} onRefresh={() => { void bookingsQuery.refetch() }} />}
     </div>
   )
 }

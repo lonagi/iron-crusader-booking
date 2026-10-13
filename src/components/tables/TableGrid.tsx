@@ -7,7 +7,8 @@ import { usePreferences } from '@/preferences/PreferencesContext'
 interface TableGridProps {
   tables: TableOut[]
   bookings: BookingOut[]
-  onTableClick: (table: TableOut) => void
+  date: string
+  onTableClick: (table: TableOut, initialHour?: number) => void
 }
 
 const container: Variants = {
@@ -22,7 +23,7 @@ const item: Variants = {
   show: { opacity: 1, y: 0, transition: { type: 'spring' as const, stiffness: 250, damping: 22 } },
 }
 
-export function TableGrid({ tables, bookings, onTableClick }: TableGridProps) {
+export function TableGrid({ tables, bookings, date, onTableClick }: TableGridProps) {
   const { t } = usePreferences()
   const activeTables = tables.filter((t) => t.is_active)
 
@@ -41,14 +42,15 @@ export function TableGrid({ tables, bookings, onTableClick }: TableGridProps) {
       variants={container}
       initial="hidden"
       animate="show"
-      className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-5"
+      className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:gap-5"
     >
       {activeTables.map((table) => (
         <motion.div key={table.id} variants={item}>
           <TableCard
             table={table}
             bookings={bookings}
-            onClick={() => onTableClick(table)}
+            date={date}
+            onClick={initialHour => onTableClick(table, initialHour)}
           />
         </motion.div>
       ))}

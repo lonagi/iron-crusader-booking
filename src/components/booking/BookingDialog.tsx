@@ -3,6 +3,7 @@ import * as Dialog from '@radix-ui/react-dialog'
 import { AlertCircle, ArrowRight, ChevronDown, Clock3, Trash2, X } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { clubHours, hourToTimeStr, timeStrToHour } from '@/lib/dates'
+import { getTableAvailability, initialAvailableHour } from '@/lib/availability'
 import { usePreferences } from '@/preferences/PreferencesContext'
 import { useCreateBooking, useCancelBooking, useGroupMembership } from '@/api/hooks'
 import { useSession } from '@/auth/SessionContext'
@@ -17,13 +18,14 @@ interface BookingDialogProps {
   table: TableOut
   date: string
   bookings: BookingOut[]
+  initialHour?: number
   onClose: () => void
   onRefresh: () => void
 }
 
 const timeLabel = (hour: number) => `${String(hour).padStart(2, '0')}:00`
 
-export function BookingDialog({ table, date, bookings, onClose, onRefresh }: BookingDialogProps) {
+export function BookingDialog({ table, date, bookings, initialHour, onClose, onRefresh }: BookingDialogProps) {
   const { t, formatDate } = usePreferences()
   const { session } = useSession()
   const toast = useToast()
@@ -40,15 +42,19 @@ export function BookingDialog({ table, date, bookings, onClose, onRefresh }: Boo
     : membership.data?.is_member === true ? 'member' : 'nonmember'
   const canBook = membershipStatus === 'member' || membershipStatus === 'unchecked'
   const hours = clubHours()
-  const [selection, setSelection] = useState<[number, number] | null>(null)
-  const [anchor, setAnchor] = useState<number | null>(null)
+  const [selection, setSelection] = useState<[number, number] | null>(() => {
+    const hour = initialAvailableHour(getTableAvailability(bookings, table.id, date), initialHour)
+    return hour === null ? null : [hour, hour]
+  })
+  const [anchor, setAnchor] = useState<number | null>(() => initialAvailableHour(getTableAvailability(bookings, table.id, date), initialHour))
   const previousFocus = useRef(typeof document !== 'undefined' && document.activeElement instanceof HTMLElement ? document.activeElement : null)
 
-  const tableBookings = useMemo(() => bookings.filter(b => b.table_id === table.id), [bookings, table.id])
+  const tableBookings = useMemo(() => bookings.filter(b => b.table_id === table.id && b.date === date), [bookings, table.id, date])
   const hourMap = useMemo(() => {
     const result: Record<number, BookingOut> = {}
     for (const booking of tableBookings) {
-      for (let hour = timeStrToHour(booking.start_time); hour < timeStrToHour(booking.end_time); hour++) {
+      const [endHour, endMinute, endSecond = 0] = booking.end_time.split(':').map(Number)
+      for (let hour = timeStrToHour(booking.start_time); hour < endHour + (endMinute > 0 || endSecond > 0 ? 1 : 0); hour++) {
         result[hour] = booking
       }
     }

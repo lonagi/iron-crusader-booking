@@ -20,6 +20,8 @@ The club image is served from `public/club-logo.jpg` and is also used as the fav
 
 The main booking page has one table list, a scrollable week selector and a date field for later days. Theme, language and sign-out are grouped in the header settings menu. On mobile, primary navigation stays at the bottom; the booking dialog uses a scrollable sheet with a fixed confirmation area. The old separate 2D plan and its unused admin editor have been removed.
 
+Each table card shows a day timeline, exact reserved intervals and buttons for its free windows. Choosing a free window opens the booking dialog with its first available full hour selected. Overlapping and adjacent reservations are merged for display; a partial-hour reservation blocks every hourly slot it overlaps.
+
 ## 3D Beta
 
 The `#/beta` route offers an optional Three.js room. Drag or swipe to rotate, use the wheel or pinch gesture to zoom, and click a table to open the regular booking dialog. The view controls include a top-down view of the same room. Arrow keys rotate the focused scene, `+` and `-` zoom, and `R` resets it. The table list below provides keyboard access and remains usable when WebGL is unavailable.
@@ -29,6 +31,8 @@ The rectangular room follows the club's supplied sketch, photo and placement cor
 The gaming positions match API tables by unambiguous RPG / D&D and numbered Warhammer / 40K / WH / Wargaming names, including Russian aliases. The craft desk also opens its matching Craft booking. Explicit `role` values are supported by the scene contract. Unknown or duplicate names are not assigned by array order or arbitrary ID; those API records remain bookable in the list. Every clickable table displays its original API name, including on mobile, without translation or replacement with a role or number. The local fixture uses the club's current table names, with sample availability and bookings.
 
 Availability and booking mutations use the same API and query cache as the main interface. The 3D bundle loads only when this route is opened, and the scene renders on interaction rather than running an idle animation loop.
+
+Choose a date and an hourly interval above the room to see availability for that time. Reserved tables display a seated figure (a tabletop marker for Craft), a different outline and a status label. A figure represents a table reservation, not a known player count. Hour changes update the scene without resetting the camera. The accessible table list also shows the whole day's reserved intervals; opening a free table preselects the chosen hour. All of this uses the existing bookings API.
 
 ## Run locally
 

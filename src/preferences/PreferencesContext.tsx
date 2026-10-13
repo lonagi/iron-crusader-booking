@@ -7,9 +7,11 @@ import { comfortMessages } from '@/i18n/comfort'
 import { bookingComfortMessages } from '@/i18n/bookingComfort'
 import { membershipCopy } from '@/i18n/membership'
 import { loginMessages } from '@/i18n/login'
+import { availabilityCardMessages } from '@/i18n/availabilityCards'
+import { roomOccupancyMessages } from '@/i18n/roomOccupancy'
 import { LANGUAGE_KEY, THEME_KEY, LOCALES, readLanguage, readTheme, interpolate, type Language, type Theme } from './settings'
 
-const messages = { ...commonMessages, ...accountMessages, ...bookingMessages, ...betaMessages, ...comfortMessages, ...bookingComfortMessages, ...membershipCopy, ...loginMessages }
+const messages = { ...commonMessages, ...accountMessages, ...bookingMessages, ...betaMessages, ...comfortMessages, ...bookingComfortMessages, ...membershipCopy, ...loginMessages, ...availabilityCardMessages, ...roomOccupancyMessages }
 type Variables = Record<string, string | number>
 
 interface Preferences {

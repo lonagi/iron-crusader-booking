@@ -1,7 +1,7 @@
 import { format, addDays, isBefore, startOfDay } from 'date-fns'
 
-export const CLUB_OPEN = 10
-export const CLUB_CLOSE = 22
+import { CLUB_OPEN, CLUB_CLOSE } from './availability'
+export { CLUB_OPEN, CLUB_CLOSE } from './availability'
 
 export function todayStr(): string {
   return format(new Date(), 'yyyy-MM-dd')

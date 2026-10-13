@@ -7,6 +7,7 @@ export interface SceneTable {
   name: string
   role?: RoomTableRole
   available: boolean
+  statusLabel?: string
 }
 
 export interface ClubScene {
@@ -158,7 +159,7 @@ export function createClubScene({ canvas, container, tables, theme, labels: cust
   }
   // A table's API name is its only display name, in every language and viewport.
   // Wrap the text instead of substituting a physical role or a mobile number.
-  function tableNameTexture(name: string, available: boolean) {
+  function tableNameTexture(name: string, available: boolean, status: string) {
     const image = document.createElement('canvas')
     image.width = 768
     const context = image.getContext('2d')!
@@ -176,9 +177,11 @@ export function createClubScene({ canvas, container, tables, theme, labels: cust
       } else line += character
     }
     if (line) lines.push(line)
-    image.width = Math.max(240, Math.ceil(Math.max(...lines.map(text => context.measureText(text).width)) + 92))
-    image.height = Math.max(160, lines.length * 100 + 44)
-    context.fillStyle = narrow ? available ? '#974e3e' : '#535b5c' : '#292a2c'
+    const nameWidth = Math.max(...lines.map(text => context.measureText(text).width))
+    context.font = '500 54px Arial, sans-serif'
+    image.width = Math.max(360, Math.ceil(Math.max(nameWidth, context.measureText(status).width) + 92))
+    image.height = Math.max(160, lines.length * 100 + 44) + (status ? 74 : 0)
+    context.fillStyle = available ? '#292a2c' : '#68372e'
     context.beginPath()
     context.roundRect(3, 3, image.width - 6, image.height - 6, 28)
     context.fill()
@@ -186,7 +189,12 @@ export function createClubScene({ canvas, container, tables, theme, labels: cust
     context.font = font
     context.textAlign = 'center'
     context.textBaseline = 'middle'
-    lines.forEach((text, index) => context.fillText(text, image.width / 2, image.height / 2 + (index - (lines.length - 1) / 2) * 100))
+    lines.forEach((text, index) => context.fillText(text, image.width / 2, 72 + index * 100))
+    if (status) {
+      context.font = '500 54px Arial, sans-serif'
+      context.fillStyle = available ? '#e5e5d2' : '#ffe0d4'
+      context.fillText(status, image.width / 2, image.height - 47)
+    }
     const texture = new THREE.CanvasTexture(image)
     texture.colorSpace = THREE.SRGBColorSpace
     return texture
@@ -349,6 +357,38 @@ export function createClubScene({ canvas, container, tables, theme, labels: cust
     for (const y of [0.67, 0.84]) box(chair, 0.32, 0.05, 0.035, 0, y, -0.15, chairWood)
     parent.add(chair)
   }
+  // One neutral figure marks a reserved table, not the number of guests.
+  const occupants = new Map<number, THREE.Group>()
+  const occupantBody = material('#d39a78', 0.82)
+  const occupantHead = material('#eee2ce', 0.8)
+  function occupiedSeat(parent: THREE.Object3D, table: SceneTable, x: number, z: number, rotation: number, seated = true) {
+    const figure = new THREE.Group()
+    figure.position.set(x, 0, z)
+    figure.rotation.y = rotation
+    figure.visible = !table.available
+    if (seated) {
+      cylinder(figure, 0.14, 0.36, 0, 0.71, 0, occupantBody)
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.14, 12, 8), occupantHead)
+      head.position.set(0, 1.04, 0)
+      head.castShadow = true
+      figure.add(head)
+      for (const side of [-1, 1]) {
+        rod(figure, new THREE.Vector3(side * 0.09, 0.52, 0), new THREE.Vector3(side * 0.1, 0.48, 0.24), 0.064, occupantBody)
+        rod(figure, new THREE.Vector3(side * 0.1, 0.48, 0.24), new THREE.Vector3(side * 0.1, 0.13, 0.24), 0.055, occupantBody)
+        rod(figure, new THREE.Vector3(side * 0.13, 0.85, 0), new THREE.Vector3(side * 0.2, 0.7, 0.2), 0.045, occupantBody)
+      }
+    } else {
+      // The craft desk has no drawn chair, so use a small tabletop reservation pawn.
+      cylinder(figure, 0.15, 0.035, 0, 0.93, 0, occupantBody)
+      cylinder(figure, 0.09, 0.2, 0, 1.04, 0, occupantBody)
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.11, 12, 8), occupantHead)
+      head.position.set(0, 1.24, 0)
+      head.castShadow = true
+      figure.add(head)
+    }
+    parent.add(figure)
+    occupants.set(table.id, figure)
+  }
   function zone(item: RoomItem) {
     const group = new THREE.Group()
     group.position.set(item.x, 0, item.z)
@@ -388,7 +428,7 @@ export function createClubScene({ canvas, container, tables, theme, labels: cust
 
   const tableGroups: THREE.Object3D[] = []
   const accents = new Map<number, THREE.MeshStandardMaterial>()
-  interface TableLabel { sprite: THREE.Sprite; text: string; available: boolean; desktopWidth: number; aspect: number }
+  interface TableLabel { sprite: THREE.Sprite; text: string; status: string; available: boolean; desktopWidth: number; aspect: number }
   const tableLabels = new Map<number, TableLabel>()
   const allTableLabels: TableLabel[] = []
   const matched = resolveRoomTables(tables)
@@ -396,7 +436,7 @@ export function createClubScene({ canvas, container, tables, theme, labels: cust
   function addTableLabel(group: THREE.Group, table: SceneTable, z: number) {
     if (!table.name.trim()) return
     const sprite = plaque(group, table.name, 2.25, 0, 1.55, z, true)
-    const label: TableLabel = { sprite, text: table.name, available: table.available, desktopWidth: 2.25, aspect: 768 / 160 }
+    const label: TableLabel = { sprite, text: table.name, status: table.statusLabel ?? '', available: table.available, desktopWidth: 2.25, aspect: 768 / 160 }
     allTableLabels.push(label)
     tableLabels.set(table.id, label)
   }
@@ -404,11 +444,12 @@ export function createClubScene({ canvas, container, tables, theme, labels: cust
     const table = matched.craft
     craft.userData.tableId = table.id
     tableGroups.push(craft)
-    const accent = material(table.available ? '#b55748' : '#7c8383', 0.7)
+    const accent = material(table.available ? '#b55748' : '#814439', 0.7)
     accents.set(table.id, accent)
     const { width, depth } = ROOM_LAYOUT.craft
     for (const z of [-depth / 2 + 0.06, depth / 2 - 0.06]) box(craft, width - 0.08, 0.018, 0.04, 0, 0.872, z, accent)
     for (const x of [-width / 2 + 0.06, width / 2 - 0.06]) box(craft, 0.04, 0.018, depth - 0.08, x, 0.872, 0, accent)
+    occupiedSeat(craft, table, 0.55, 0.19, 0, false)
     addTableLabel(craft, table, 0.35)
   } else plaque(craft, labels.craft, 1.7, 0, 1.22, 0.35)
   function battleMat(index: number) {
@@ -457,7 +498,7 @@ export function createClubScene({ canvas, container, tables, theme, labels: cust
       group.userData.tableId = table.id
       tableGroups.push(group)
     }
-    const accent = material(table ? (table.available ? '#b55748' : '#7c8383') : '#b1b4b0', 0.7)
+    const accent = material(table ? (table.available ? '#b55748' : '#814439') : '#b1b4b0', 0.7)
     if (table) accents.set(table.id, accent)
     foldingTable(group, item.width, item.depth)
     box(group, item.width - 0.1, 0.028, item.depth - 0.1, 0, 0.878, 0, accent)
@@ -496,12 +537,15 @@ export function createClubScene({ canvas, container, tables, theme, labels: cust
         woodenChair(group, x, item.depth / 2 + 0.31, Math.PI)
       }
     }
-    if (table) addTableLabel(group, table, -0.3)
+    if (table) {
+      occupiedSeat(group, table, role === 'rpg' ? 0 : -0.67, item.depth / 2 + (role === 'rpg' ? 0.27 : 0.31), Math.PI)
+      addTableLabel(group, table, -0.3)
+    }
   }
 
   function refreshTableLabel(label: TableLabel) {
     const old = label.sprite.material.map
-    const texture = tableNameTexture(label.text, label.available)
+    const texture = tableNameTexture(label.text, label.available, label.status)
     label.sprite.material.map = texture
     label.aspect = texture.image.width / texture.image.height
     label.desktopWidth = 2.25 * texture.image.width / 768
@@ -528,10 +572,13 @@ export function createClubScene({ canvas, container, tables, theme, labels: cust
   }
   function setAvailability(next: SceneTable[]) {
     for (const table of next) {
-      accents.get(table.id)?.color.set(table.available ? '#b55748' : '#7c8383')
+      accents.get(table.id)?.color.set(table.available ? '#b55748' : '#814439')
+      const occupant = occupants.get(table.id)
+      if (occupant) occupant.visible = !table.available
       const label = tableLabels.get(table.id)
-      if (label) {
+      if (label && (label.available !== table.available || label.status !== (table.statusLabel ?? ''))) {
         label.available = table.available
+        label.status = table.statusLabel ?? ''
         refreshTableLabel(label)
       }
     }

@@ -73,7 +73,7 @@ export function ClubRoom({ tables, highlightedId, onHover, onPick, onList }: Clu
           <button type="button" className="btn-icon border-transparent" aria-label={t('Reset view')} title={t('Reset view')} onClick={() => sceneRef.current?.reset()}><RotateCcw className="h-5 w-5" /></button>
         </div>
       </div>}
-      {!unavailable && <p className="bg-surface px-5 pb-4 text-sm leading-relaxed text-muted">{t('Drag to look around. Tap a table to book.')}</p>}
+      {!unavailable && <p className="bg-surface px-5 pb-4 text-sm leading-relaxed text-muted">{t('A figure marks a reserved table at the selected time.')}</p>}
       {!unavailable && <span id="room-keyboard-help" className="sr-only">{t('Use arrow keys to rotate, + or - to zoom, and R to reset the view.')}</span>}
     </div>
   )
